@@ -29,18 +29,13 @@ namespace DATA_TABLE {
 	struct Object {
 		ObjectTypes object_type;
 		ObjectValue object_value;
-
-		// Constructor mặc định
 		Object() : object_type(TYPE_NULL) {
 			object_value = {};
 		}
-
-		// Destructor để giải phóng bộ nhớ
 		~Object() {
 			cleanup();
 		}
 
-		// Copy constructor
 		Object(const Object& other) {
 			copy(other);
 		}
@@ -74,8 +69,8 @@ namespace DATA_TABLE {
 			case TYPE_STRING:
 				if (other.object_value.str_ != nullptr) {
 					size_t len = strlen(other.object_value.str_) + 1; // Tính độ dài chuỗi, bao gồm cả ký tự null
-					object_value.str_ = new char[len]; // Cấp phát bộ nhớ cho chuỗi mới
-					strcpy_s(object_value.str_, len, other.object_value.str_); // Sao chép chuỗi an toàn
+					object_value.str_ = new char[len];
+					strcpy_s(object_value.str_, len, other.object_value.str_); 
 				}
 				else {
 					object_value.str_ = nullptr;

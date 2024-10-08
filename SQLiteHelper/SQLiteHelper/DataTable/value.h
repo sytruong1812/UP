@@ -28,26 +28,21 @@ namespace DATA_TABLE {
 	template<class T>
 	class Value : public IValue {
 	private:
-		T value_; // Giá trị lưu trữ
+		T value_;
 		size_t size_;
 	public:
 		Value() : size_(0) {}
 		~Value() override {}
 
-		// Thêm giá trị từ Object*
 		void add(Object*, size_t) override;
 
-		// Thêm giá trị trực tiếp
 		void add(T object) {
 			value_ = object;
 		}
-
-		// Thêm giá trị từ kiểu ObjectTypes
 		void add(ObjectTypes type) {
 			value_ = static_cast<T>(type);
 		}
 
-		// Lấy Object từ giá trị lưu trữ
 		Object get() {
 			Object obj;
 			if (std::is_same<T, int>::value) {
@@ -87,6 +82,9 @@ namespace DATA_TABLE {
 		}
 	};
 
+	/*
+	Template Specialization
+	*/
 	template<>
 	void Value<int>::add(Object* obj, size_t size) {
 		if (obj->object_type == TYPE_INT) {
@@ -118,13 +116,13 @@ namespace DATA_TABLE {
 	template<>
 	void Value<char*>::add(Object* obj, size_t size) {
 		if (value_ != nullptr) {
-			delete[] value_; // Giải phóng bộ nhớ
-			value_ = nullptr; // Đặt lại con trỏ về nullptr để tránh lỗi
+			delete[] value_;
+			value_ = nullptr;
 		}
 		if (obj->object_type == TYPE_STRING && obj->object_value.str_ != nullptr) {
 			value_ = new char[size + 1];
 			size_ = size + 1;
-			strcpy_s(value_, size + 1, obj->object_value.str_); // Sao chép chuỗi an toàn
+			strcpy_s(value_, size + 1, obj->object_value.str_);
 		}
 		else {
 			value_ = nullptr;
@@ -134,8 +132,8 @@ namespace DATA_TABLE {
 	template<>
 	void Value<uint8_t*>::add(Object* obj, size_t size) {
 		if (value_ != nullptr) {
-			delete[] value_; // Giải phóng bộ nhớ
-			value_ = nullptr; // Đặt lại con trỏ về nullptr để tránh lỗi
+			delete[] value_;
+			value_ = nullptr;
 		}
 		if (obj->object_type == TYPE_BLOB && obj->object_value.blob_ != nullptr) {
 			value_ = new uint8_t[size + 1];

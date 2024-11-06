@@ -1,4 +1,4 @@
-#include "aes-tiny.h"
+#include "aes_tiny.h"
 
 /*----------------------------------------------------------------------------*\
                     Constants and important / useful MACROs
@@ -51,6 +51,7 @@ static const char rsbox[257] =
 \*----------------------------------------------------------------------------*/
 
 /** The array that stores all round keys during the AES key-expansion process */
+//TODO: Crack in multithread
 static uint8_t RoundKey[BLOCKSIZE * ROUNDS + KEYSIZE];
 
 /** block_t indicates fixed-size memory blocks, and state_t represents the state
@@ -1125,8 +1126,10 @@ static void GHash( const block_t H, const void* aData, const void* crtxt,
 }
 
 /** encrypt zeros to get authentication subkey H, and prepare the IV for GCM. */
-static void GCM_Init( const uint8_t* key,
-                      const uint8_t* nonce, block_t authKey, block_t iv )
+static void GCM_Init( const uint8_t* key, 
+                      const uint8_t* nonce, 
+                      block_t authKey, 
+                      block_t iv )
 {
     AES_SetKey( key );
     rijndaelEncrypt( authKey, authKey );         /* authKey = Enc(zero block) */

@@ -7,8 +7,6 @@
 #include <sstream>
 #include <windows.h>
 
-using namespace std;
-
 #ifndef __FUNCTION_NAME__
 #ifdef WIN32   //WINDOWS
 #define __FUNCTION_NAME__   __FUNCTION__  
@@ -53,18 +51,18 @@ typedef enum
 	OUTPUT_DEBUG,
 } LOG_OPT;
 
-string GetTimeA();
-wstring GetTimeW();
-template <typename Args> static void PrintArgsA(stringstream& ss, Args args)
+std::string GetTimeA();
+std::wstring GetTimeW();
+template <typename Args> static void PrintArgsA(std::stringstream& ss, Args args)
 {
 	ss << "{" << args << "}";
 }
-template <typename Args> static void PrintArgsW(wstringstream& ss, Args args)
+template <typename Args> static void PrintArgsW(std::wstringstream& ss, Args args)
 {
 	ss << L"{" << args << L"}";
 }
-wstring str_to_wstr(const std::string& str);
-string wstr_to_str(const std::wstring& wstr);
+std::wstring str_to_wstr(const std::string& str);
+std::string wstr_to_str(const std::wstring& wstr);
 
 class TraceLogger
 {
@@ -76,8 +74,8 @@ private:
 private:
 	HANDLE hFile = NULL;
 	bool W_LOG(const CHAR* buffer, size_t size);
-	void L_OUT_A(const string& ss, size_t color);
-	void L_OUT_W(const wstring& ss, size_t color);
+	void L_OUT_A(const std::string& ss, size_t color);
+	void L_OUT_W(const std::wstring& ss, size_t color);
 private:
 	static TraceLogger* s_instance; 	//Singleton 
 	TraceLogger(LOG_OPT option_ = LOG_OPT::SHOW_CONSOLE, LOG_LEVEL level_ = LOG_LEVEL::NOTSET)
@@ -130,13 +128,13 @@ public:
 	template <typename Func, typename... Args>
 	void TraceCallA(const CHAR* name, ULONG line, const CHAR* file, const Func& func, Args... args)
 	{
-		stringstream ss;
+		std::stringstream ss;
 		if (enable_trace)
 		{
 			int dummy[] = { 0, ((void)PrintArgsA(ss, std::forward<Args>(args)),0)... };
 			if (option == OUTPUT_DEBUG || option == WRITE_FILE)
 			{
-				L_OUT_A(GetTimeA() + "[TRACE_CALL][Line: " + to_string(line) + ']' + "[Function call: " + string(name) + ']' + "[Param: " + ss.str() + ']' + "[File: " + string(file) + "]\r\n", WHITE);
+				L_OUT_A(GetTimeA() + "[TRACE_CALL][Line: " + std::to_string(line) + ']' + "[Function call: " + std::string(name) + ']' + "[Param: " + ss.str() + ']' + "[File: " + std::string(file) + "]\r\n", WHITE);
 			}
 			else
 			{
@@ -144,11 +142,11 @@ public:
 				L_OUT_A("[", WHITE);
 				L_OUT_A("TRACE_CALL", PURPLE);
 				L_OUT_A("]", WHITE);
-				L_OUT_A("[Function call: " + string(name) + ']', WHITE);
-				L_OUT_A("[Line: " + to_string(line) + ']', WHITE);
+				L_OUT_A("[Function call: " + std::string(name) + ']', WHITE);
+				L_OUT_A("[Line: " + std::to_string(line) + ']', WHITE);
 				L_OUT_A("[Param: ", WHITE);
 				L_OUT_A(ss.str(), WHITE);
-				L_OUT_A("[File: " + string(file) + "]\r\n", WHITE);
+				L_OUT_A("[File: " + std::string(file) + "]\r\n", WHITE);
 			}
 		}
 		func(args...);
@@ -160,13 +158,13 @@ public:
 	template <typename Func, typename... Args>
 	void TraceCallW(const CHAR* name, ULONG line, const CHAR* file, const Func& func, Args... args)
 	{
-		wstringstream ss;
+		std::wstringstream ss;
 		if (enable_trace)
 		{
 			int dummy[] = { 0, ((void)PrintArgsW(ss, std::forward<Args>(args)),0)... };
 			if (option == OUTPUT_DEBUG || option == WRITE_FILE)
 			{
-				L_OUT_W(GetTimeW() + L"[TRACE_CALL][Line: " + to_wstring(line) + L']' + L"[Function call: " + str_to_wstr(name) + L']' + L"[Param: " + ss.str() + L']' + L"[File: " + str_to_wstr(file) + L"]\r\n", WHITE);
+				L_OUT_W(GetTimeW() + L"[TRACE_CALL][Line: " + std::to_wstring(line) + L']' + L"[Function call: " + str_to_wstr(name) + L']' + L"[Param: " + ss.str() + L']' + L"[File: " + str_to_wstr(file) + L"]\r\n", WHITE);
 			}
 			else
 			{
@@ -175,7 +173,7 @@ public:
 				L_OUT_W(L"TRACE_CALL", PURPLE);
 				L_OUT_W(L"]", WHITE);
 				L_OUT_W(L"[Function call: " + str_to_wstr(name) + L']', WHITE);
-				L_OUT_W(L"[Line: " + to_wstring(line) + L']', WHITE);
+				L_OUT_W(L"[Line: " + std::to_wstring(line) + L']', WHITE);
 				L_OUT_W(L"[Param: ", WHITE);
 				L_OUT_W(ss.str() + L']', WHITE);
 				L_OUT_W(L"[File: " + str_to_wstr(file) + L"]\r\n", WHITE);

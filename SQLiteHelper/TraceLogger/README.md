@@ -1,24 +1,26 @@
 # TraceLogger
-
-TraceLogger is a C++ library for ...
-
+TraceLogger is a C++ library that supports logging for programs and applications.
 ## Logging Levels
-* NOTSET: line
-* DEBUG: line, function
-* INFO: line, function
-* WARN: line, function
-* ERR: line, function, file
-* CRIT: line, function, file
+* NOTSET : If this level is set, the function log displays the line number and log messages
+* DEBUG  : If this level is set, the function log displays the line number, function name and log messages
+* INFO   : If this level is set, the function log displays the line number, function name and log messages
+* WARN   : If this level is set, the function log displays the line number, function name and log messages
+* ERR    : If this level is set, the function log displays the line number, function name, file name and log messages
+* CRIT   : If this level is set, the function log displays the line number, function name, file name and log messages
+## Output
+* WRITE_FILE   : Write log data to file
+* SHOW_CONSOLE : Show console
+* OUTPUT_DEBUG : Show log data in debug output
 ### Enable/Disable trace and log
 ```c++
     TraceLogger::instance()->EnableLog(BOOL);
     TraceLogger::instance()->EnableTrace(BOOL);
 ```
-### Set default log out
+### Set log function output (Console, Write file, Output debug)
 ```c++
     TraceLogger::instance()->SetLogOut(LOG_OPT);
 ```
-### Set level show log
+### Set log level
 ```c++
     TraceLogger::instance()->SetLogLevel(LOG_LEVEL);
 ```
@@ -44,13 +46,13 @@ TraceLogger is a C++ library for ...
     ENABLE_LOG(BOOL);
     ENABLE_TRACE(BOOL);
 ```
-### Set default log out
+### Set log function output (Console, Write file, Output debug)
 ```c++
     SET_LOG_OUT(SHOW_CONSOLE);      
     SET_LOG_OUT(WRITE_FILE);
     SET_LOG_OUT(OUTPUT_DEBUG);
 ```
-### Set level show log
+### Set log level
 ```c++
     SET_LOG_LEVEL(CRIT);
 ```

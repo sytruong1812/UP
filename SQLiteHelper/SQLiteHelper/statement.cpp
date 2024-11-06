@@ -3,92 +3,56 @@
 namespace SQLiteHelper {
 
 	Statement::Statement(sqlite3* db, std::string query) {
-		mbHasRow = false;
-		mbDone = false;
 		stmt = NULL;
+		ret_code = SQLITE_OK;
 		int ret = sqlite3_prepare_v2(db, query.c_str(), (int)query.length(), &stmt, 0);
 		if (SQLITE_OK != ret) {
-			throw SQLiteException(db);
+			ret_code = sqlite3_errcode(db);
 		}
 	}
-	Statement::~Statement() {
-
+	Statement::~Statement() 
+	{
+		sqlite3_finalize(stmt);
 	}
 
-	sqlite3* Statement::getDatabaseHandle()
+	sqlite3* Statement::getDbHandle()
 	{
 		return sqlite3_db_handle(stmt);
 	}
 
-	sqlite3_stmt* Statement::getStatementObject()
+	sqlite3_stmt* Statement::getStmtObject()
 	{
 		return stmt;
 	}
 
-	int Statement::try_execute_step()
-	{
-		if (false == mbDone)
-		{
-			const int ret = sqlite3_step(stmt);
-			if (SQLITE_ROW == ret) // one row is ready : call COLUMN method(index) to access it
-			{
-				mbHasRow = true;
-			}
-			else if (SQLITE_DONE == ret) // no (more) row ready : the query has finished executing
-			{
-				mbHasRow = false;
-				mbDone = true;
-			}
-			else
-			{
-				mbHasRow = false;
-				mbDone = false;
-			}
-			return ret;
-		}
-		else
-		{
-			return SQLITE_MISUSE;	// Statement needs to be reseted!
-		}
-	}
-
-	// Execute a step of the query to fetch one row of results
 	int Statement::execute_step()
 	{
-		const int ret = try_execute_step();
-
-		if ((SQLITE_ROW != ret) && (SQLITE_DONE != ret)) // on row or no (more) row ready, else it's a problem
-		{
-			throw SQLiteException(getDatabaseHandle());
-		}
-		return mbHasRow; // true only if one row is accessible by getColumn(N)
+		return sqlite3_step(stmt);
 	}
 
 	// Execute a one-step query with no expected result
 	int Statement::execute()
 	{
-		const int ret = try_execute_step();
-
+		const int ret = sqlite3_step(stmt);
 		if (SQLITE_DONE != ret) {
-			if (SQLITE_ROW == ret) {
-				throw SQLiteException("exec() does not expect results. Use executeStep.");
-			}
-			else {
-				throw SQLiteException(getDatabaseHandle());
+			if (SQLITE_ROW == ret) 
+			{
+				//exec() does not expect results. Use executeStep.
+				ret_code = sqlite3_errcode(getDbHandle());
 			}
 		}
 		// Return the number of rows modified by those SQL statements (INSERT, UPDATE or DELETE)
-		return sqlite3_changes(getDatabaseHandle());
+		return sqlite3_changes(getDbHandle());
 	}
 
-	void Statement::reset()
+	int Statement::result()
 	{
-		sqlite3_reset(stmt);
+		return ret_code;
 	}
 
-	void Statement::close()
+	int Statement::reset()
 	{
-		sqlite3_finalize(stmt);
+		return sqlite3_reset(stmt);
 	}
 
 	/*===================[BINDING]===================*/
@@ -98,7 +62,7 @@ namespace SQLiteHelper {
 		int lastResult = 0;
 		if ((lastResult = sqlite3_bind_null(stmt, index)) != SQLITE_OK)
 		{
-			throw SQLiteException("Error " + std::to_string(lastResult) + " binding Null");
+			ret_code = lastResult;
 		}
 		return lastResult;
 	}
@@ -108,7 +72,7 @@ namespace SQLiteHelper {
 		int lastResult = 0;
 		if ((lastResult = sqlite3_bind_int(stmt, index, value)) != SQLITE_OK)
 		{
-			throw SQLiteException("Error " + std::to_string(lastResult) + " binding Integer [" + std::to_string(value) + "]");
+			ret_code = lastResult;
 		}
 		return lastResult;
 	}
@@ -118,7 +82,7 @@ namespace SQLiteHelper {
 		int lastResult = 0;
 		if ((lastResult = sqlite3_bind_int64(stmt, index, value)) != SQLITE_OK)
 		{
-			throw SQLiteException("Error " + std::to_string(lastResult) + " binding Long [" + std::to_string(value) + "]");
+			ret_code = lastResult;
 		}
 		return lastResult;
 	}
@@ -128,27 +92,37 @@ namespace SQLiteHelper {
 		int lastResult = 0;
 		if ((lastResult = sqlite3_bind_double(stmt, index, value)) != SQLITE_OK)
 		{
-			throw SQLiteException("Error " + std::to_string(lastResult) + " binding double [" + std::to_string(value) + "]");
+			ret_code = lastResult;
 		}
 		return lastResult;
 	}
 
-	int Statement::bindText(int index, std::string value)
+	int Statement::bindText(int index, const char* text, int size)
 	{
 		int lastResult = 0;
-		if ((lastResult = sqlite3_bind_text(stmt, index, value.c_str(), -1, NULL)) != SQLITE_OK)
+		if ((lastResult = sqlite3_bind_text(stmt, index, text, size, NULL)) != SQLITE_OK)
 		{
-			throw SQLiteException("Error " + std::to_string(lastResult) + " binding Text [" + value + "]");
+			ret_code = lastResult;
 		}
 		return lastResult;
 	}
 
-	int Statement::bindBlob(int index, unsigned char* data, size_t size)
+	int Statement::bindText16(int index, const char* text, int size)
 	{
 		int lastResult = 0;
-		if ((lastResult = sqlite3_bind_blob(stmt, index, data, (int)size, NULL)) != SQLITE_OK)
+		if ((lastResult = sqlite3_bind_text16(stmt, index, text, size, NULL)) != SQLITE_OK)
 		{
-			throw SQLiteException("Error " + std::to_string(lastResult) + " binding Blob [...010...]");
+			ret_code = lastResult;
+		}
+		return lastResult;
+	}
+
+	int Statement::bindBlob(int index, unsigned char* data, int size)
+	{
+		int lastResult = 0;
+		if ((lastResult = sqlite3_bind_blob(stmt, index, data, size, NULL)) != SQLITE_OK)
+		{
+			ret_code = lastResult;
 		}
 		return lastResult;
 	}
@@ -158,17 +132,14 @@ namespace SQLiteHelper {
 		int lastResult = 0;
 		if ((lastResult = sqlite3_bind_value(stmt, index, value)) != SQLITE_OK)
 		{
-			throw SQLiteException("Error " + std::to_string(lastResult) + " binding Null");
+			ret_code = lastResult;
 		}
 		return lastResult;
 	}
 
-	void Statement::clearBindings()
+	int Statement::clearBindings()
 	{
-		const int ret = sqlite3_clear_bindings(stmt);
-		if (SQLITE_OK != ret) {
-			throw SQLiteException(getDatabaseHandle());
-		}
+		return sqlite3_clear_bindings(stmt);
 	}
 
 	/*===================[COLUMN]====================*/
@@ -200,7 +171,7 @@ namespace SQLiteHelper {
 
 	long long Statement::getInt64(int index)
 	{
-		return sqlite3_column_int64(stmt, index);
+		return static_cast<long long>(sqlite3_column_int64(stmt, index));
 	}
 
 	unsigned Statement::getUInt(int index)
@@ -213,26 +184,26 @@ namespace SQLiteHelper {
 		return sqlite3_column_double(stmt, index);
 	}
 
+	const char* Statement::getText(int index)
+	{
+		const char* pText = reinterpret_cast<const char*>(sqlite3_column_text(stmt, index));
+		return pText ? pText : NULL;
+	}
+
+	std::string Statement::getTextString(int index)
+	{
+		const char* pText = reinterpret_cast<const char*>(sqlite3_column_text(stmt, index));
+		return std::string(pText, sqlite3_column_bytes(stmt, index));
+	}
+
 	const void* Statement::getBlob(int index)
 	{
 		return sqlite3_column_blob(stmt, index);
 	}
 
-	std::string Statement::getText(int index)
+	std::string Statement::getBlobString(int index)
 	{
-		const char* pText = reinterpret_cast<const char*>(sqlite3_column_text(stmt, index));
-		return pText ? pText : "";
-	}
-
-	std::string Statement::getString(int index)
-	{
-		// Note: using sqlite3_column_blob and not sqlite3_column_text
-		// - no need for sqlite3_column_text to add a \0 on the end, as we're getting the bytes length directly
 		const char* data = static_cast<const char*>(sqlite3_column_blob(stmt, index));
-
-		// SQLite docs: "The safest policy is to invoke… sqlite3_column_blob() followed by sqlite3_column_bytes()"
-		// Note: std::string is ok to pass nullptr as first arg, if length is 0
 		return std::string(data, sqlite3_column_bytes(stmt, index));
 	}
-
 }

@@ -2,36 +2,34 @@
 #include <string>
 #include "sqlite3.h"
 #include "database.h"
-#include "exception.h"
 
 namespace SQLiteHelper {
 
 	class Statement 
 	{
 	private:
-		bool mbDone;         //true when the last executeStep() had no more row to fetch
-		bool mbHasRow;       //true when a row has been fetched with executeStep()
+		int ret_code;
 		sqlite3_stmt* stmt;
 	public:
 		Statement(sqlite3* db, std::string query);
 		~Statement();
-		sqlite3* getDatabaseHandle();
-		sqlite3_stmt* getStatementObject();
-		int try_execute_step();
+		sqlite3* getDbHandle();
+		sqlite3_stmt* getStmtObject();
 		int execute_step();
 		int execute();
-		void reset();
-		void close();
+		int result();
+		int reset();
 	public:
 		/*===================[BINDING]===================*/
+		int clearBindings();
 		int bindNull(int index);
 		int bindInt(int index, int value);
 		int bindInt64(int index, long long value);
 		int bindDouble(int index, double value);
-		int bindText(int index, std::string value);
-		int bindBlob(int index, unsigned char* data, size_t size);
+		int bindText(int index, const char* text, int size);
+		int bindText16(int index, const char* text, int size);
+		int bindBlob(int index, unsigned char* data, int size);
 		int bindValue(int index, sqlite3_value* value);
-		void clearBindings();
 	public:
 		/*===================[COLUMN]====================*/
 		int columnCount();
@@ -42,9 +40,10 @@ namespace SQLiteHelper {
 		unsigned getUInt(int index);
 		double getDouble(int index);
 		int getBytes(int index);
+		const char* getText(int index);
 		const void* getBlob(int index);
-		std::string getText(int index);
-		std::string getString(int index);
+		std::string getTextString(int index);
+		std::string getBlobString(int index);
 	};
 
 }

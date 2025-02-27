@@ -1,0 +1,122 @@
+{\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1033{\fonttbl{\f0\fnil\fcharset0 Calibri;}{\f1\fnil\fcharset163 Calibri;}{\f2\fnil\fcharset238 Calibri;}}
+{\*\generator Riched20 10.0.22621}\viewkind4\uc1 
+\pard\sa200\sl276\slmult1\f0\fs22 # M\'f4 t\f1\lang1066\u7843? c\f0\lang1033\'e1c ph\f2\u432?\u417?ng \f0\'e1n th\f1\lang1066\u7921?c hi\u7879?n\par
+\par
+## I. Ng\u7919? c\u7843?nh s\u7917? d\u7909?ng\par
+\par
+H\u7879? th\u7889?ng h\u7895? tr\u7907? cho vi\u7879?c mua - b\f0\lang1033\'e1n s\f1\lang1066\u7843?n ph\u7849?m c\f0\lang1033\'f3 b\f1\lang1066\u7843?n quy\u7873?n. Khi nh\u7853?n \f2\'f0\u432?\f1\u7907?c y\f0\lang1033\'eau c\f1\lang1066\u7847?u t\u7915? ng\f2\u432?\f1\u7901?i mua, h\u7879? th\u7889?ng s\u7869? t\u7841?o ra m\u7897?t file \u7913?ng d\u7909?ng (App) c\f0\lang1033\'f3 ch\f1\lang1066\u7913?a th\f0\lang1033\'f4ng tin c\f1\lang1066\u7845?u h\f0\lang1033\'ecnh (config) d\f1\lang1066\u7921?a tr\f0\lang1033\'ean d\f1\lang1066\u7919? li\u7879?u cung c\u7845?p b\u7903?i ng\f2\u432?\f1\u7901?i mua.\par
+\par
+Th\u7901?i gian th\u7921?c hi\u7879?n: **13-02-2025 -> 28-02-2025**\par
+\par
+## II. Y\f0\lang1033\'eau c\f1\lang1066\u7847?u\par
+\par
+- Cung c\u7845?p gi\u7843?i ph\f0\lang1033\'e1p \f2\'f0\f1\lang1066\u7875? t\u7841?o s\u7889? l\f2\u432?\f1\u7907?ng l\u7899?n file App t\u7915? m\u7897?t file PE template.\par
+- C\f0\lang1033\'e1c file App c\'f3 logic x\f1\lang1066\u7917? l\f0\lang1033\'fd b\'ean trong gi\f1\lang1066\u7889?ng nhau, ch\u7881? kh\f0\lang1033\'e1c v\f1\lang1066\u7873? c\u7845?u h\f0\lang1033\'ecnh.\par
+- C\f1\lang1066\u7845?u h\f0\lang1033\'ecnh bao g\f1\lang1066\u7891?m c\f0\lang1033\'e1c th\'f4ng tin:\par
+  - Server Address\par
+  - App ID\par
+  - User ID\par
+  - Email\par
+  - Full Name\par
+  - Time Zone\par
+  - Data encrypted\par
+  - Key decrypt data\par
+  - ...\par
+- Nghi\'ean c\f1\lang1066\u7913?u v\f0\lang1033\'e0 \f2\'f0\f1\lang1066\u7873? xu\u7845?t c\f0\lang1033\'e1c ph\f2\u432?\u417?ng \f0\'e1n c\'f3 th\f1\lang1066\u7875? \f0\lang1033\'e1p d\f1\lang1066\u7909?ng.\par
+- V\u7899?i m\u7895?i ph\f2\u432?\u417?ng \f0\lang1033\'e1n, c\f1\lang1066\u7847?n tri\u7875?n khai m\u7897?t b\u7843?n demo.\par
+- Cung c\u7845?p t\f0\lang1033\'e0i li\f1\lang1066\u7879?u h\f2\u432?\f1\u7899?ng d\u7851?n tri\u7875?n khai th\u7921?c t\u7871?.\par
+- C\f0\lang1033\'f4ng c\f1\lang1066\u7909? c\u7853?p nh\u7853?t config: **C#**\par
+- File PE (C++): **L\f0\lang1033\'e0 file DLL ho\f1\lang1066\u7863?c EXE, c\f0\lang1033\'f3 th\f1\lang1066\u7875? c\u7853?p nh\u7853?t c\u7845?u h\f0\lang1033\'ecnh b\'ean trong v\'e0 hi\f1\lang1066\u7875?n th\u7883? \f2\'f0\f0\lang1033\'fang th\'f4ng tin user cung c\f1\lang1066\u7845?p.**\par
+\par
+## III. C\f0\lang1033\'e1c ph\f2\u432?\u417?ng \f0\'e1n th\f1\lang1066\u7921?c hi\u7879?n\par
+\par
+### 1. Tr\f2\u432?\f1\u7901?ng h\u7907?p file PE Template ch\f2\u432?a build\par
+\par
+#### **Option 1: Gom v\f0\lang1033\'e0o chung m\f1\lang1066\u7897?t section**\par
+\par
+##### **B\f2\u432?\f1\u7899?c 1:** Khai b\f0\lang1033\'e1o th\'f4ng tin config trong m\f1\lang1066\u7897?t c\u7845?u tr\f0\lang1033\'fac `ConfigData`\par
+\par
+- Vi\f1\lang1066\u7879?c khai b\f0\lang1033\'e1o m\f1\lang1066\u7897?t struct gi\f0\lang1033\'fap d\f1\lang1066\u7919? li\u7879?u \f2\'f0\u432?\f1\u7907?c qu\u7843?n l\f0\lang1033\'fd t\f1\lang1066\u7853?p trung, tr\f0\lang1033\'e1nh sai s\'f3t.\par
+- C\'e1c bi\f1\lang1066\u7871?n trong struct n\f0\lang1033\'ean c\'f3 ki\f1\lang1066\u7875?u d\u7919? li\u7879?u c\u7889? \f2\'f0\f1\u7883?nh nh\f2\u432? `int`, `long`, `char[]`, `wchar[]`, `unsigned char[]`...\par
+- M\f1\u7843?ng n\f0\lang1033\'ean c\'f3 k\'edch th\f2\u432?\f1\lang1066\u7899?c \f2\'f0\f1\u7911? ho\u7863?c d\f2\u432? \'f0\f1\u7875? l\f2\u432?u gi\f0\lang1033\'e1 tr\f1\lang1066\u7883? (v\f0\lang1033\'ed d\f1\lang1066\u7909?: `char[256] = "Hello World!"`).\par
+\par
+##### **B\f2\u432?\f1\u7899?c 2:** \f2\'d0\u432?a config v\f0\lang1033\'e0o m\f1\lang1066\u7897?t section ri\f0\lang1033\'eang\par
+\par
+- S\f1\lang1066\u7917? d\u7909?ng section ri\f0\lang1033\'eang gi\'fap ph\'e2n t\'e1ch d\f1\lang1066\u7919? li\u7879?u c\u7845?u h\f0\lang1033\'ecnh kh\f1\lang1066\u7887?i code th\u7921?c thi, d\u7877? d\f0\lang1033\'e0ng t\'ecm ki\f1\lang1066\u7871?m v\f0\lang1033\'e0 ch\f1\lang1066\u7881?nh s\u7917?a.\par
+- T\f0\lang1033\'ean section \f2\'f0\u432?\f1\lang1066\u7907?c ch\u7881? \f2\'f0\f1\u7883?nh ngay t\u7915? \f2\'f0\f1\u7847?u (`.st0`), gi\f0\lang1033\'fap code \f2\'f0\f1\lang1066\u7885?c d\u7919? li\u7879?u nhanh ch\f0\lang1033\'f3ng.\par
+  ```cpp\par
+  #pragma const_seg("section-name")\par
+  #pragma const_seg(push, "section-name")\par
+  ```\par
+\par
+##### **B\f2\u432?\f1\lang1066\u7899?c 3:** Parse d\u7919? li\u7879?u t\u7915? section `.st0`\par
+\par
+- \f2\'d0\f1\u7885?c `ConfigData` c\f2\u361?.\par
+- C\f1\u7853?p nh\u7853?t c\u7845?u h\f0\lang1033\'ecnh m\f1\lang1066\u7899?i.\par
+- Ghi \f2\'f0\f0\lang1033\'e8 d\f1\lang1066\u7919? li\u7879?u m\u7899?i v\f0\lang1033\'e0o section `.st0`.\par
+- C\'e1ch ti\f1\lang1066\u7871?p c\u7853?n n\f0\lang1033\'e0y \f2\'f0\f1\lang1066\u7843?m b\u7843?o c\u7845?u h\f0\lang1033\'ecnh \f2\'f0\u432?\f1\lang1066\u7907?c thay \f2\'f0\f1\u7893?i m\f0\lang1033\'e0 kh\'f4ng c\f1\lang1066\u7847?n bi\f0\lang1033\'ean d\f1\lang1066\u7883?ch l\u7841?i to\f0\lang1033\'e0n b\f1\lang1066\u7897? file PE.\par
+\par
+##### **\f2\u431?u \'f0i\f1\u7875?m v\f0\lang1033\'e0 Gi\f1\lang1066\u7899?i h\u7841?n**\par
+\par
+- **\f2\u431?u \'f0i\f1\u7875?m:**\par
+  - C\u7845?u tr\f0\lang1033\'fac r\'f5 r\'e0ng, d\f1\lang1066\u7877? truy xu\u7845?t v\f0\lang1033\'e0 ch\f1\lang1066\u7881?nh s\u7917?a th\f0\lang1033\'f4ng tin c\f1\lang1066\u7845?u h\f0\lang1033\'ecnh.\par
+  - Kh\'f4ng y\'eau c\f1\lang1066\u7847?u thay \f2\'f0\f1\u7893?i m\f0\lang1033\'e3 ngu\f1\lang1066\u7891?n c\u7911?a \u7913?ng d\u7909?ng PE template qu\f0\lang1033\'e1 nhi\f1\lang1066\u7873?u.\par
+  - Truy c\u7853?p nhanh, kh\f0\lang1033\'f4ng \f1\lang1066\u7843?nh h\f2\u432?\f1\u7903?ng \f2\'f0\f1\u7871?n hi\u7879?u su\u7845?t th\u7921?c thi.\par
+- **Gi\u7899?i h\u7841?n:**\par
+  - C\u7847?n qu\u7843?n l\f0\lang1033\'fd section h\f1\lang1066\u7907?p l\f0\lang1033\'fd \f2\'f0\f1\lang1066\u7875? tr\f0\lang1033\'e1nh xung \f2\'f0\f1\lang1066\u7897?t v\u7899?i c\f0\lang1033\'e1c ph\f1\lang1066\u7847?n kh\f0\lang1033\'e1c c\f1\lang1066\u7911?a PE file.\par
+  - K\f0\lang1033\'edch th\f2\u432?\f1\lang1066\u7899?c c\u7911?a section `.st0` c\u7847?n \f2\'f0\u432?\f1\u7907?c x\f0\lang1033\'e1c \f2\'f0\f1\lang1066\u7883?nh tr\f2\u432?\f1\u7899?c \f2\'f0\f1\u7875? tr\f0\lang1033\'e1nh l\f1\lang1066\u7895?i ghi \f2\'f0\f0\lang1033\'e8 ngo\'e0i ph\f1\lang1066\u7841?m vi.\par
+\par
+##### **\f2\'d0\f0\lang1033\'e1nh gi\'e1 hi\f1\lang1066\u7879?u qu\u7843?**\par
+- Ph\f0\lang1033\'f9 h\f1\lang1066\u7907?p v\u7899?i c\f0\lang1033\'e1c d\f1\lang1066\u7921? \f0\lang1033\'e1n c\'f3 y\'eau c\f1\lang1066\u7847?u truy c\u7853?p d\u7919? li\u7879?u nhanh, \f0\lang1033\'edt thay \f2\'f0\f1\lang1066\u7893?i c\u7845?u h\f0\lang1033\'ecnh.\par
+- C\f1\lang1066\u7847?n \f2\'f0\f1\u7843?m b\u7843?o ph\u7847?n `section` \f2\'f0\f1\u7911? l\u7899?n \f2\'f0\f1\u7875? ch\u7913?a t\u7845?t c\u7843? th\f0\lang1033\'f4ng tin c\f1\lang1066\u7845?u h\f0\lang1033\'ecnh.\par
+- C\'f3 th\f1\lang1066\u7875? \f0\lang1033\'e1p d\f1\lang1066\u7909?ng trong c\f0\lang1033\'e1c h\f1\lang1066\u7879? th\u7889?ng c\f0\lang1033\'f3 c\f1\lang1066\u7845?u tr\f0\lang1033\'fac d\f1\lang1066\u7919? li\u7879?u t\f2\u297?nh, \f0\lang1033\'edt c\f1\lang1066\u7847?n c\u7853?p nh\u7853?t.\par
+\par
+---\par
+\par
+#### **Option 2: Embed data v\f0\lang1033\'e0 Update data**\par
+\par
+##### **Quy tr\'ecnh th\f1\lang1066\u7921?c hi\u7879?n**\par
+\par
+- C\f0\lang1033\'f4ng c\f1\lang1066\u7909? C# nh\f0\lang1033\'fang d\f1\lang1066\u7919? li\u7879?u `DataConfig` v\f0\lang1033\'e0o section ch\f1\lang1066\u7881? \f2\'f0\f1\u7883?nh \f2\'f0\f0\lang1033\'e3 \f2\'f0\u432?\f1\lang1066\u7907?c t\u7841?o m\u7899?i.\par
+- File PE Template c\f0\lang1033\'f3 s\f1\lang1066\u7861?n h\f0\lang1033\'e0m `UpdateConfig()` \f2\'f0\f1\lang1066\u7875? \f2\'f0\f1\u7885?c d\u7919? li\u7879?u t\u7915? section n\f0\lang1033\'e0y.\par
+- PE Template \f2\'f0\f1\lang1066\u7885?c d\u7919? li\u7879?u, \f0\lang1033\'e1nh x\f1\lang1066\u7841? v\f0\lang1033\'e0o struct `DataConfig` v\'e0 c\f1\lang1066\u7853?p nh\u7853?t gi\f0\lang1033\'e1 tr\f1\lang1066\u7883? c\u7911?a c\f0\lang1033\'e1c bi\f1\lang1066\u7871?n c\u7845?u h\f0\lang1033\'ecnh t\f1\lang1066\u7915? c\f2\u361? -> m\f1\u7899?i.\par
+- Ph\f2\u432?\u417?ng ph\f0\lang1033\'e1p n\'e0y gi\'fap c\f1\lang1066\u7853?p nh\u7853?t c\u7845?u h\f0\lang1033\'ecnh m\'e0 kh\'f4ng c\f1\lang1066\u7847?n bi\f0\lang1033\'ean d\f1\lang1066\u7883?ch l\u7841?i \u7913?ng d\u7909?ng.\par
+\par
+##### **\f2\u431?u \'f0i\f1\u7875?m v\f0\lang1033\'e0 Gi\f1\lang1066\u7899?i h\u7841?n**\par
+\par
+- **\f2\u431?u \'f0i\f1\u7875?m:**\par
+  - Gi\u7843?i ph\f0\lang1033\'e1p linh ho\f1\lang1066\u7841?t, kh\f0\lang1033\'f4ng y\'eau c\f1\lang1066\u7847?u ch\u7881?nh s\u7917?a PE file th\u7911? c\f0\lang1033\'f4ng.\par
+  - C\'f3 th\f1\lang1066\u7875? c\u7853?p nh\u7853?t d\u7919? li\u7879?u \f2\'f0\f1\u7897?ng m\f0\lang1033\'e0 kh\'f4ng c\f1\lang1066\u7847?n build l\u7841?i \u7913?ng d\u7909?ng.\par
+  - Cho ph\f0\lang1033\'e9p tri\f1\lang1066\u7875?n khai tr\f0\lang1033\'ean nhi\f1\lang1066\u7873?u n\u7873?n t\u7843?ng v\u7899?i \f0\lang1033\'edt ch\f1\lang1066\u7881?nh s\u7917?a h\f2\u417?n.\par
+  - H\f1\u7895? tr\u7907? thay \f2\'f0\f1\u7893?i d\u7919? li\u7879?u c\u7845?u h\f0\lang1033\'ecnh m\'e0 kh\'f4ng l\'e0m gi\'e1n \f2\'f0o\f1\lang1066\u7841?n \u7913?ng d\u7909?ng.\par
+- **Gi\u7899?i h\u7841?n:**\par
+  - C\u7847?n \f2\'f0\f1\u7843?m b\u7843?o PE Template h\u7895? tr\u7907? ph\f2\u432?\u417?ng th\f1\u7913?c `UpdateConfig()` \f2\'f0\f1\u7875? \f2\'f0\f1\u7885?c v\f0\lang1033\'e0 x\f1\lang1066\u7917? l\f0\lang1033\'fd d\f1\lang1066\u7919? li\u7879?u ch\f0\lang1033\'ednh x\'e1c.\par
+  - Vi\f1\lang1066\u7879?c thay \f2\'f0\f1\u7893?i c\u7845?u tr\f0\lang1033\'fac d\f1\lang1066\u7919? li\u7879?u c\f0\lang1033\'f3 th\f1\lang1066\u7875? y\f0\lang1033\'eau c\f1\lang1066\u7847?u c\u7853?p nh\u7853?t l\u7841?i c\u7843? tool v\f0\lang1033\'e0 PE Template.\par
+  - Vi\f1\lang1066\u7879?c \f2\'f0\f1\u7885?c v\f0\lang1033\'e0 ghi v\'e0o section c\'f3 th\f1\lang1066\u7875? l\f0\lang1033\'e0m t\f2\'e3ng k\f0\'edch th\f2\u432?\f1\lang1066\u7899?c file PE.\par
+\par
+##### **\f2\'d0\f0\lang1033\'e1nh gi\'e1 hi\f1\lang1066\u7879?u qu\u7843?**\par
+- Ph\f0\lang1033\'f9 h\f1\lang1066\u7907?p cho c\f0\lang1033\'e1c \f1\lang1066\u7913?ng d\u7909?ng c\f0\lang1033\'f3 y\'eau c\f1\lang1066\u7847?u c\u7853?p nh\u7853?t c\u7845?u h\f0\lang1033\'ecnh th\f2\u432?\f1\lang1066\u7901?ng xuy\f0\lang1033\'ean.\par
+- D\f1\lang1066\u7877? d\f0\lang1033\'e0ng b\f1\lang1066\u7843?o tr\f0\lang1033\'ec v\'e0 c\f1\lang1066\u7853?p nh\u7853?t c\u7845?u h\f0\lang1033\'ecnh m\'e0 kh\'f4ng c\f1\lang1066\u7847?n ch\u7881?nh s\u7917?a file PE g\u7889?c.\par
+- Y\f0\lang1033\'eau c\f1\lang1066\u7847?u ph\u7847?n m\u7873?m h\u7895? tr\u7907? c\u7853?p nh\u7853?t config, c\f0\lang1033\'f3 th\f1\lang1066\u7875? g\f0\lang1033\'e2y ph\f1\lang1066\u7909? thu\u7897?c v\f0\lang1033\'e0o tool C#.\par
+- H\f1\lang1066\u7919?u \f0\lang1033\'edch trong m\'f4i tr\f2\u432?\f1\lang1066\u7901?ng ph\f0\lang1033\'e1t tri\f1\lang1066\u7875?n linh ho\u7841?t, c\u7847?n thay \f2\'f0\f1\u7893?i c\u7845?u h\f0\lang1033\'ecnh nhanh.\par
+\par
+## IV. K\f1\lang1066\u7871?t lu\u7853?n\par
+\par
+C\u7843? hai ph\f2\u432?\u417?ng \f0\lang1033\'e1n \f2\'f0\f1\lang1066\u7873?u c\f0\lang1033\'f3 \f2\u432?u \'f0i\f1\lang1066\u7875?m v\f0\lang1033\'e0 h\f1\lang1066\u7841?n ch\u7871? ri\f0\lang1033\'eang, l\f1\lang1066\u7921?a ch\u7885?n ph\f2\u432?\u417?ng \f0\lang1033\'e1n ph\'f9 h\f1\lang1066\u7907?p ph\u7909? thu\u7897?c v\f0\lang1033\'e0o \f2\'f0\f1\lang1066\u7863?c \f2\'f0i\f1\u7875?m d\u7921? \f0\lang1033\'e1n:\par
+\par
+- **Option 1** ph\'f9 h\f1\lang1066\u7907?p n\u7871?u c\u7847?n t\u7889?i \f2\u432?u hi\f1\u7879?u su\u7845?t truy xu\u7845?t d\u7919? li\u7879?u nhanh ch\f0\lang1033\'f3ng v\'e0 c\'f3 th\f1\lang1066\u7875? ki\u7875?m so\f0\lang1033\'e1t tr\f1\lang1066\u7921?c ti\u7871?p d\u7919? li\u7879?u trong PE file.\par
+- **Option 2** linh ho\u7841?t h\f2\u417?n, d\f1\u7877? b\u7843?o tr\f0\lang1033\'ec v\'e0 c\'f3 th\f1\lang1066\u7875? tri\u7875?n khai m\f0\lang1033\'e0 kh\'f4ng c\f1\lang1066\u7847?n s\u7917?a \f2\'f0\f1\u7893?i m\f0\lang1033\'e3 ngu\f1\lang1066\u7891?n c\u7911?a \u7913?ng d\u7909?ng ch\f0\lang1033\'ednh.\par
+\par
+### **So s\'e1nh t\f1\lang1066\u7893?ng quan**\par
+| Ti\f0\lang1033\'eau ch\'ed           | Option 1: Gom v\'e0o section | Option 2: Embed & Update |\par
+|-------------------|----------------------|----------------------|\par
+| Hi\f1\lang1066\u7879?u su\u7845?t truy xu\u7845?t | Nhanh h\f2\u417?n            | Ch\f1\u7853?m h\f2\u417?n do c\f1\u7847?n \f2\'f0\f1\u7885?c & c\u7853?p nh\u7853?t |\par
+| D\u7877? b\u7843?o tr\f0\lang1033\'ec       | Kh\'f3 h\f2\u417?n               | D\f1\lang1066\u7877? d\f0\lang1033\'e0ng c\f1\lang1066\u7853?p nh\u7853?t |\par
+| Y\f0\lang1033\'eau c\f1\lang1066\u7847?u thay \f2\'f0\f1\u7893?i PE | C\f0\lang1033\'f3, c\f1\lang1066\u7847?n ch\u7881?nh s\u7917?a template | Kh\f0\lang1033\'f4ng, ch\f1\lang1066\u7881? c\u7847?n h\u7895? tr\u7907? \f2\'f0\f1\u7885?c config |\par
+| M\u7913?c \f2\'f0\f1\u7897? linh ho\u7841?t  | Th\u7845?p                  | Cao |\par
+| R\u7911?i ro l\u7895?i        | Trung b\f0\lang1033\'ecnh            | Cao h\f2\u417?n do ph\f1\lang1066\u7843?i \f2\'f0\f1\u7885?c & ghi d\u7919? li\u7879?u |\par
+\par
+C\u7847?n ti\u7871?p t\u7909?c th\u7917? nghi\u7879?m v\f0\lang1033\'e0 t\f1\lang1066\u7889?i \f2\u432?u h\f0\lang1033\'f3a \f2\'f0\f1\lang1066\u7875? \f2\'f0\f1\u7843?m b\u7843?o l\u7921?a ch\u7885?n ph\f2\u432?\u417?ng \f0\lang1033\'e1n ph\'f9 h\f1\lang1066\u7907?p nh\u7845?t cho h\u7879? th\u7889?ng.\par
+\f0\lang1033\par
+}
+ 

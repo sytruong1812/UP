@@ -1,0 +1,44 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34728.123
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libcurl_adapter_test", "libcurl_adapter_test\libcurl_adapter_test.vcxproj", "{1D30AFC9-AD42-478C-AC16-CCB3551F1275}"
+	ProjectSection(ProjectDependencies) = postProject
+		{593FAEF9-E135-493A-B636-E72B95BFF4DD} = {593FAEF9-E135-493A-B636-E72B95BFF4DD}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libcurl_adapter", "libcurl_adapter\libcurl_adapter.vcxproj", "{593FAEF9-E135-493A-B636-E72B95BFF4DD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1D30AFC9-AD42-478C-AC16-CCB3551F1275}.Debug|x64.ActiveCfg = Debug|x64
+		{1D30AFC9-AD42-478C-AC16-CCB3551F1275}.Debug|x64.Build.0 = Debug|x64
+		{1D30AFC9-AD42-478C-AC16-CCB3551F1275}.Debug|x86.ActiveCfg = Debug|Win32
+		{1D30AFC9-AD42-478C-AC16-CCB3551F1275}.Debug|x86.Build.0 = Debug|Win32
+		{1D30AFC9-AD42-478C-AC16-CCB3551F1275}.Release|x64.ActiveCfg = Release|x64
+		{1D30AFC9-AD42-478C-AC16-CCB3551F1275}.Release|x64.Build.0 = Release|x64
+		{1D30AFC9-AD42-478C-AC16-CCB3551F1275}.Release|x86.ActiveCfg = Release|Win32
+		{1D30AFC9-AD42-478C-AC16-CCB3551F1275}.Release|x86.Build.0 = Release|Win32
+		{593FAEF9-E135-493A-B636-E72B95BFF4DD}.Debug|x64.ActiveCfg = Debug|x64
+		{593FAEF9-E135-493A-B636-E72B95BFF4DD}.Debug|x64.Build.0 = Debug|x64
+		{593FAEF9-E135-493A-B636-E72B95BFF4DD}.Debug|x86.ActiveCfg = Debug|Win32
+		{593FAEF9-E135-493A-B636-E72B95BFF4DD}.Debug|x86.Build.0 = Debug|Win32
+		{593FAEF9-E135-493A-B636-E72B95BFF4DD}.Release|x64.ActiveCfg = Release|x64
+		{593FAEF9-E135-493A-B636-E72B95BFF4DD}.Release|x64.Build.0 = Release|x64
+		{593FAEF9-E135-493A-B636-E72B95BFF4DD}.Release|x86.ActiveCfg = Release|Win32
+		{593FAEF9-E135-493A-B636-E72B95BFF4DD}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C7597334-A0A5-4273-8924-C424E3C6F5C9}
+	EndGlobalSection
+EndGlobal

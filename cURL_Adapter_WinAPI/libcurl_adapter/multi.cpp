@@ -2,6 +2,7 @@
 #include "multi.h"
 #include "utils.h"
 #include "urldata.h"
+#include "url.h"
 
 void Curl_init_connect(struct Curl_easy* data)
 {
@@ -129,22 +130,37 @@ CURLcode Curl_pretransfer(struct Curl_easy* data)
 /*=================================[ State ]===============================*/
 static CURLMcode state_connect(struct Curl_multi* multi, struct Curl_easy* data, struct curltime* nowp, CURLcode* resultp) 
 {
-
+	bool async;
+	bool connected;
+	CURLMcode rc = CURLM_OK;
+	CURLcode result = Curl_connect(data, &async, &connected);
+	if (CURLE_NO_CONNECTION_AVAILABLE == result)
+	{
+		multistate(data, MSTATE_PENDING);
+		/* unlink from process list */
+		Curl_node_remove(&data->multi_queue);
+		/* add handle to pending list */
+		Curl_llist_append(&multi->pending, data, &data->multi_queue);
+		*resultp = CURLE_OK;
+		return rc;
+	}
+	*resultp = result;
+	return rc;
 }
 
 static CURLMcode state_resolving(struct Curl_multi* multi, struct Curl_easy* data, bool* stream_errorp, CURLcode* resultp)
 {
-
+	return CURLM_OK;
 }
 
 static CURLMcode state_do(struct Curl_easy* data, bool* stream_errorp, CURLcode* resultp)
 {
-
+	return CURLM_OK;
 }
 
 static CURLMcode state_ratelimiting(struct Curl_easy* data, struct curltime* nowp, CURLcode* resultp) 
 {
-
+	return CURLM_OK;
 }
 
 /*=================================[ Multi Handle ]===============================*/
@@ -193,6 +209,7 @@ static CURLMcode multi_runsingle(struct Curl_multi* multi, struct Curl_easy* dat
 {
 	CURLMcode rc;
 	CURLcode result = CURLE_OK;
+	connectdata* conn = data->conn;
 
 	if (!GOOD_EASY_HANDLE(data))
 	{
@@ -205,157 +222,147 @@ static CURLMcode multi_runsingle(struct Curl_multi* multi, struct Curl_easy* dat
 		multistate(data, MSTATE_COMPLETED);
 	}
 
-	do
-	{
+	do {
 		rc = CURLM_OK;
 		bool stream_error = FALSE;
+		bool done = FALSE;
+
 		if (multi_ischanged(multi, TRUE))
 		{
 			DEBUGF(infof(data, "multi changed, check CONNECT_PEND queue"));
 		}
+
 		if (data->mstate > MSTATE_CONNECT && data->mstate < MSTATE_COMPLETED)
 		{
-			DEBUGASSERT(data->conn);	/* Make sure we set the connection's current owner */
+			DEBUGASSERT(data->conn);
 			if (!data->conn)
 			{
 				return CURLM_INTERNAL_ERROR;
 			}
 		}
+
 		if ((data->mstate >= MSTATE_CONNECT) && (data->mstate < MSTATE_COMPLETED))
 		{
-			goto statemachine_end;		/* Skip the statemachine and go directly to error handling section. */
+			goto statemachine_end;
 		}
 
 		switch (data->mstate)
 		{
-			case MSTATE_INIT:
-				infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_INIT");
-				result = Curl_pretransfer(data);
-				if (result) {
-					break;
-				}
-				multistate(data, MSTATE_SETUP);
-				FALLTHROUGH();
-			case MSTATE_SETUP:
-				infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_SETUP");
-				if (data->set.timeout)
-				{
-					//Curl_expire(data, data->set.timeout, EXPIRE_TIMEOUT);
-				}				
-				if (data->set.connecttimeout)
-				{
-					//Curl_expire(data, data->set.connecttimeout, EXPIRE_CONNECTTIMEOUT);
-				}
-				multistate(data, MSTATE_CONNECT);
-				FALLTHROUGH();
-			case MSTATE_CONNECT:
-				infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_CONNECT");
-
-
+		case MSTATE_INIT:
+			infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_INIT");
+			result = Curl_pretransfer(data);
+			if (result) {
 				break;
-			case MSTATE_RESOLVING:
-				infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_RESOLVING");
+			}
+			multistate(data, MSTATE_SETUP);
+			FALLTHROUGH();
 
+		case MSTATE_SETUP:
+			infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_SETUP");
+			if (data->set.timeout)
+			{
 
-				break;
+			}
+			multistate(data, MSTATE_CONNECT);
+			FALLTHROUGH();
 
+		case MSTATE_CONNECT:
+			infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_CONNECT");
+			rc = state_connect(multi, data, NULL, &result);
+			break;
+		case MSTATE_RESOLVING:
+			infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_RESOLVING");
+			break;
 #ifndef CURL_DISABLE_HTTP
-			case MSTATE_TUNNELING:
-				infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_TUNNELING");
-
-
-				break;
+		case MSTATE_TUNNELING:
+			infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_TUNNELING");
+			break;
 #endif
-			case MSTATE_CONNECTING:
-				infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_CONNECTING");
+		case MSTATE_CONNECTING:
+			infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_CONNECTING");
 
 
-				break;
-			case MSTATE_PROTOCONNECT:
-				infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_PROTOCONNECT");
+			break;
+		case MSTATE_PROTOCONNECT:
+			infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_PROTOCONNECT");
+			break;
+		case MSTATE_PROTOCONNECTING:
+			infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_PROTOCONNECTING");
+			break;
+		case MSTATE_DO:
+			infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_DO");
+			if (conn && conn->handler->do_it) {
+				result = conn->handler->do_it(data, &done);
+				if (result)
+					break;
+				if (done)
+					multistate(data, MSTATE_DOING);
+			}
+			break;
 
+		case MSTATE_DOING:
+			infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_DOING");
+			if (conn && conn->handler->doing) {
+				result = conn->handler->doing(data, &done);
+				if (result)
+					break;
+				if (done)
+					multistate(data, MSTATE_DONE);
+			}
+			break;
+		case MSTATE_DOING_MORE:
+			infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_DOING_MORE");
+			break;
+		case MSTATE_DID:
+			infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_DID");
+			break;
+		case MSTATE_RATELIMITING:
+			infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_RATELIMITING");
+			break;
 
-				break;
-			case MSTATE_PROTOCONNECTING:
-				infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_PROTOCONNECTING");
+		case MSTATE_DONE:
+			infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_DONE");
+			if (conn && conn->handler->done) {
+				result = conn->handler->done(data, result, FALSE);
+			}
+			multistate(data, MSTATE_COMPLETED);
+			break;
 
+		case MSTATE_COMPLETED:
+			infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_COMPLETED");
+			if (conn) {
+				Curl_node_remove(&data->conn_queue);
+				data->conn = NULL;
+			}
+			break;
 
-				break;
-			case MSTATE_DO:
-				infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_DO");
+		case MSTATE_PENDING:
+			infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_PENDING");
+			DEBUGASSERT(0);
+			break;
+		case MSTATE_MSGSENT:
+			infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_MSGSENT");
+			DEBUGASSERT(0);
+			break;
 
-
-
-				break;
-			case MSTATE_DOING:
-				infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_DOING");
-
-
-
-
-				break;
-			case MSTATE_DOING_MORE:
-				infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_DOING_MORE");
-
-
-				break;
-			case MSTATE_DID:
-				infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_DID");
-
-
-				break;
-			case MSTATE_RATELIMITING:
-				infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_RATELIMITING");
-
-
-				break;
-			case MSTATE_PERFORMING:
-				infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_PERFORMING");
-
-
-				multistate(data, MSTATE_DONE);
-				break;
-			case MSTATE_DONE:
-				infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_DONE");
-
-
-				multistate(data, MSTATE_COMPLETED);
-				break;
-			case MSTATE_COMPLETED:
-				infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_COMPLETED");
-
-
-
-				break;
-			case MSTATE_PENDING:
-				infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_PENDING");
-
-
-
-				DEBUGASSERT(0);
-				break;
-			case MSTATE_MSGSENT:
-				infof(data, "\t\t\t\t\t\t\t\t\t\t-----> MSTATE_MSGSENT");
-
-
-
-				DEBUGASSERT(0);
-				break;
-			default:
-				infof(data, "\t\t\t\t\t\t\t\t\t\t-----> CURLM_INTERNAL_ERROR");
-
-				return CURLM_INTERNAL_ERROR;
+		default:
+			infof(data, "\t\t\t\t\t\t\t\t\t\t-----> CURLM_INTERNAL_ERROR");
+			return CURLM_INTERNAL_ERROR;
 		}
 
-statemachine_end:
+	statemachine_end:
 
 		if (data->mstate < MSTATE_COMPLETED)
 		{
-
+			if (result) {
+				stream_error = TRUE;
+				multistate(data, MSTATE_COMPLETED);
+			}
 		}
+
 		if (MSTATE_COMPLETED == data->mstate)
 		{
-
+			// Final cleanup already handled in MSTATE_COMPLETED case
 		}
 
 	} while ((rc == CURLM_CALL_MULTI_PERFORM) || multi_ischanged(multi, FALSE));

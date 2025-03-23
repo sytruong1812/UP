@@ -1,54 +1,5 @@
 #include "http.h"
 
-/*
- * HTTP handler interface.
- */
-const struct Curl_handler Curl_handler_http = {
-  "http",													/* scheme */
-  Curl_http_setup_conn,										/* setup_connection */
-  Curl_http,												/* do_it */
-  Curl_http_done,											/* done */
-  ZERO_NULL,												/* do_more */
-  Curl_http_connect,										/* connect_it */
-  ZERO_NULL,												/* connecting */
-  ZERO_NULL,												/* doing */
-  ZERO_NULL,												/* disconnect */
-  Curl_http_write_resp,										/* write_resp */
-  Curl_http_write_resp_hd,									/* write_resp_hd */
-  ZERO_NULL,												/* connection_check */
-  ZERO_NULL,												/* attach connection */
-  PORT_HTTP,												/* defport */
-  CURLPROTO_HTTP,											/* protocol */
-  CURLPROTO_HTTP,											/* family */
-  PROTOPT_CREDSPERREQUEST | PROTOPT_USERPWDCTRL             /* flags */
-};
-
-#ifdef USE_SSL
-/*
- * HTTPS handler interface.
- */
-const struct Curl_handler Curl_handler_https = {
-  "https",													/* scheme */
-  Curl_http_setup_conn,										/* setup_connection */
-  Curl_http,												/* do_it */
-  Curl_http_done,											/* done */
-  ZERO_NULL,												/* do_more */
-  Curl_http_connect,										/* connect_it */
-  NULL,														/* connecting */
-  ZERO_NULL,												/* doing */
-  ZERO_NULL,												/* disconnect */
-  Curl_http_write_resp,										/* write_resp */
-  Curl_http_write_resp_hd,									/* write_resp_hd */
-  ZERO_NULL,												/* connection_check */
-  ZERO_NULL,												/* attach connection */
-  PORT_HTTPS,												/* defport */
-  CURLPROTO_HTTPS,											/* protocol */
-  CURLPROTO_HTTP,											/* family */
-  PROTOPT_SSL | PROTOPT_CREDSPERREQUEST |					/* flags */
-  PROTOPT_ALPN | PROTOPT_USERPWDCTRL
-};
-#endif
-
 CURLcode Curl_http_setup_conn(struct Curl_easy* data, struct connectdata* conn)
 {
 	CURLcode result = CURLE_OK;
@@ -720,3 +671,52 @@ void Curl_http_method(struct Curl_easy* data, const char** method, Curl_HttpReq*
 	*method = request;
 	*reqp = httpreq;
 }
+
+/*
+ * HTTP handler interface.
+ */
+const struct Curl_handler Curl_handler_http = {
+  "http",													/* scheme */
+  Curl_http_setup_conn,										/* setup_connection */
+  Curl_http,												/* do_it */
+  Curl_http_done,											/* done */
+  ZERO_NULL,												/* do_more */
+  Curl_http_connect,										/* connect_it */
+  ZERO_NULL,												/* connecting */
+  ZERO_NULL,												/* doing */
+  ZERO_NULL,												/* disconnect */
+  Curl_http_write_resp,										/* write_resp */
+  Curl_http_write_resp_hd,									/* write_resp_hd */
+  ZERO_NULL,												/* connection_check */
+  ZERO_NULL,												/* attach connection */
+  PORT_HTTP,												/* defport */
+  CURLPROTO_HTTP,											/* protocol */
+  CURLPROTO_HTTP,											/* family */
+  PROTOPT_CREDSPERREQUEST | PROTOPT_USERPWDCTRL             /* flags */
+};
+
+#ifdef USE_SSL
+/*
+ * HTTPS handler interface.
+ */
+const struct Curl_handler Curl_handler_https = {
+  "https",													/* scheme */
+  Curl_http_setup_conn,										/* setup_connection */
+  Curl_http,												/* do_it */
+  Curl_http_done,											/* done */
+  ZERO_NULL,												/* do_more */
+  Curl_http_connect,										/* connect_it */
+  NULL,														/* connecting */
+  ZERO_NULL,												/* doing */
+  ZERO_NULL,												/* disconnect */
+  Curl_http_write_resp,										/* write_resp */
+  Curl_http_write_resp_hd,									/* write_resp_hd */
+  ZERO_NULL,												/* connection_check */
+  ZERO_NULL,												/* attach connection */
+  PORT_HTTPS,												/* defport */
+  CURLPROTO_HTTPS,											/* protocol */
+  CURLPROTO_HTTP,											/* family */
+  PROTOPT_SSL | PROTOPT_CREDSPERREQUEST |					/* flags */
+  PROTOPT_ALPN | PROTOPT_USERPWDCTRL
+};
+#endif

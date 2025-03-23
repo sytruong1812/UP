@@ -108,7 +108,6 @@ CURLcode Curl_uc_to_curlcode(CURLUcode uc)
 }
 
 
-/* Free the URL pieces */
 static void up_free(struct Curl_easy* data)
 {
 	struct urlpieces* up = &data->state.up;
@@ -128,7 +127,7 @@ static CURLcode findprotocol(struct Curl_easy* data, struct connectdata* conn, c
 {	
 	/* Protocol found in table. Check if allowed */
 	const struct Curl_handler* p = Curl_get_scheme_handler(protostr);
-	if (p && (data->set.allowed_protocols & p->protocol))
+	if (p && p->protocol)
 	{
 		/* it is allowed for "normal" request, now do an extra check if this is the result of a redirect */
 		if (data->state.this_is_a_follow && !(data->set.redir_protocols & p->protocol))
@@ -146,9 +145,7 @@ static CURLcode findprotocol(struct Curl_easy* data, struct connectdata* conn, c
 	return CURLE_UNSUPPORTED_PROTOCOL;
 }
 
-/*
- * Parse URL and fill in the relevant members of the connection struct.
- */
+//TODO: Parse URL and fill in the relevant members of the connection struct.
 static CURLcode parseurlandfillconn(struct Curl_easy* data, struct connectdata* conn)
 {
 	CURLU* uh;
@@ -351,9 +348,7 @@ static CURLcode parseurlandfillconn(struct Curl_easy* data, struct connectdata* 
 	return CURLE_OK;
 }
 
-/*
- * Set the login details so they are available in the connection
- */
+//TODO: Set the login details so they are available in the connection
 static CURLcode set_login(struct Curl_easy* data, struct connectdata* conn)
 {
 	CURLcode result = CURLE_OK;
@@ -394,9 +389,9 @@ static CURLcode set_login(struct Curl_easy* data, struct connectdata* conn)
 //TODO: Here parse url -> get protocol -> set info for connectdata.
 CURLcode Curl_connect(struct Curl_easy* data, bool* async, bool* protocol_connect)
 {
+	*async = FALSE; /* assume synchronous resolves by default */
 	CURLcode result;
 	struct connectdata* conn;
-	*async = FALSE; /* assume synchronous resolves by default */
 
 	Curl_req_hard_reset(&data->req, data);
 
@@ -612,63 +607,42 @@ const struct Curl_handler* Curl_get_scheme_handler(const char* scheme)
 
 const struct Curl_handler* Curl_getn_scheme_handler(const char* scheme, size_t len)
 {
-	static const struct Curl_handler* const protocols[67] = 
+	static const struct Curl_handler* const protocols[] = 
 	{
-  #ifndef CURL_DISABLE_HTTP
-	  & Curl_handler_http,
-  #else
-	  NULL,
-  #endif
+#ifndef CURL_DISABLE_HTTP
+		& Curl_handler_http,    /* "http" */
+#if defined(USE_SSL)
+		&Curl_handler_https,	/* "https" */
+#endif
+#if !defined(CURL_DISABLE_WEBSOCKETS)
+		&Curl_handler_ws,		/* "ws" */
+#if defined(USE_SSL)
+		&Curl_handler_wss,		/* "wss" */
+#endif
+#endif
+#endif
 
-  #if defined(USE_SSL) && !defined(CURL_DISABLE_HTTP)
-	  &Curl_handler_https,
-  #else
-	  NULL,
-  #endif
-
-  #ifndef CURL_DISABLE_FTP
-	  & Curl_handler_ftp,
-  #else
-	  NULL,
-  #endif
-
-  #if defined(USE_SSL) && !defined(CURL_DISABLE_FTP)
-	  &Curl_handler_ftps,
-  #else
-	  NULL,
-  #endif
-
-  #if !defined(CURL_DISABLE_WEBSOCKETS) && !defined(CURL_DISABLE_HTTP)
-	  &Curl_handler_ws,
-  #else
-	  NULL,
-  #endif
-
-  #if !defined(CURL_DISABLE_WEBSOCKETS) && defined(USE_SSL) && !defined(CURL_DISABLE_HTTP)
-	  &Curl_handler_wss,
-  #else
-	  NULL,
-  #endif
+#ifndef CURL_DISABLE_FTP
+		& Curl_handler_ftp,     /* "ftp" */
+#if defined(USE_SSL)
+		&Curl_handler_ftps,		/* "ftps" */
+#endif
+#endif
+		NULL					/* End marker */
 	};
 
-	if (len && (len <= 7))
+	if (!scheme || !len || len >= 5) {
+		return NULL;
+	}
+
+	for (const struct Curl_handler* const* p = protocols; *p; p++)
 	{
-		const char* s = scheme;
-		size_t l = len;
-		const struct Curl_handler* h;
-		unsigned int c = 978;
-		while (l)
-		{
-			c <<= 5;
-			c += (unsigned int)Curl_raw_tolower(*s);
-			s++;
-			l--;
-		}
-		h = protocols[c % 67];
+		const struct Curl_handler* h = *p;
 		if (h && strncasecompare(scheme, h->scheme, len) && !h->scheme[len])
 		{
 			return h;
 		}
 	}
+
 	return NULL;
 }

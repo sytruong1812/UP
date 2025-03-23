@@ -1,50 +1,6 @@
 ﻿#include "ws.h"
 #include "http.h"
 
-const struct Curl_handler Curl_handler_ws = {
-  "WS",                                 /* scheme */
-  Curl_http_setup_conn,                 /* setup_connection */
-  Curl_ws,                              /* do_it */
-  Curl_http_done,                       /* done */
-  ZERO_NULL,                            /* do_more */
-  Curl_http_connect,                    /* connect_it */
-  ZERO_NULL,                            /* connecting */
-  ZERO_NULL,                            /* doing */
-  ws_disconnect,                        /* disconnect */
-  Curl_http_write_resp,                 /* write_resp */
-  Curl_http_write_resp_hd,              /* write_resp_hd */
-  ZERO_NULL,                            /* connection_check */
-  ZERO_NULL,                            /* attach connection */
-  PORT_HTTP,                            /* defport */
-  CURLPROTO_WS,                         /* protocol */
-  CURLPROTO_HTTP,                       /* family */
-  PROTOPT_CREDSPERREQUEST |             /* flags */
-  PROTOPT_USERPWDCTRL
-};
-
-#ifdef USE_SSL
-const struct Curl_handler Curl_handler_wss = {
-  "WSS",                                /* scheme */
-  Curl_http_setup_conn,                 /* setup_connection */
-  Curl_ws,                              /* do_it */
-  Curl_http_done,                       /* done */
-  ZERO_NULL,                            /* do_more */
-  Curl_http_connect,                    /* connect_it */
-  ZERO_NULL,                            /* connecting */
-  ZERO_NULL,                            /* doing */
-  ws_disconnect,                        /* disconnect */
-  Curl_http_write_resp,                 /* write_resp */
-  Curl_http_write_resp_hd,              /* write_resp_hd */
-  ZERO_NULL,                            /* connection_check */
-  ZERO_NULL,                            /* attach connection */
-  PORT_HTTPS,                           /* defport */
-  CURLPROTO_WSS,                        /* protocol */
-  CURLPROTO_HTTP,                       /* family */
-  PROTOPT_SSL | PROTOPT_CREDSPERREQUEST | /* flags */
-  PROTOPT_USERPWDCTRL
-};
-#endif
-
 CURLcode Curl_ws(struct Curl_easy* data, bool* done)
 {
 	CURLUcode uc;
@@ -324,3 +280,46 @@ CURL_EXTERN CURLcode curl_ws_send(CURL* curl, const void* buffer, size_t buflen,
 	return CURLE_OK;
 }
 
+const struct Curl_handler Curl_handler_ws = {
+  "WS",                                 /* scheme */
+  Curl_http_setup_conn,                 /* setup_connection */
+  Curl_ws,                              /* do_it */
+  Curl_http_done,                       /* done */
+  ZERO_NULL,                            /* do_more */
+  Curl_http_connect,                    /* connect_it */
+  ZERO_NULL,                            /* connecting */
+  ZERO_NULL,                            /* doing */
+  ws_disconnect,                        /* disconnect */
+  Curl_http_write_resp,                 /* write_resp */
+  Curl_http_write_resp_hd,              /* write_resp_hd */
+  ZERO_NULL,                            /* connection_check */
+  ZERO_NULL,                            /* attach connection */
+  PORT_HTTP,                            /* defport */
+  CURLPROTO_WS,                         /* protocol */
+  CURLPROTO_HTTP,                       /* family */
+  PROTOPT_CREDSPERREQUEST |             /* flags */
+  PROTOPT_USERPWDCTRL
+};
+
+#ifdef USE_SSL
+const struct Curl_handler Curl_handler_wss = {
+  "WSS",                                /* scheme */
+  Curl_http_setup_conn,                 /* setup_connection */
+  Curl_ws,                              /* do_it */
+  Curl_http_done,                       /* done */
+  ZERO_NULL,                            /* do_more */
+  Curl_http_connect,                    /* connect_it */
+  ZERO_NULL,                            /* connecting */
+  ZERO_NULL,                            /* doing */
+  ws_disconnect,                        /* disconnect */
+  Curl_http_write_resp,                 /* write_resp */
+  Curl_http_write_resp_hd,              /* write_resp_hd */
+  ZERO_NULL,                            /* connection_check */
+  ZERO_NULL,                            /* attach connection */
+  PORT_HTTPS,                           /* defport */
+  CURLPROTO_WSS,                        /* protocol */
+  CURLPROTO_HTTP,                       /* family */
+  PROTOPT_SSL | PROTOPT_CREDSPERREQUEST | /* flags */
+  PROTOPT_USERPWDCTRL
+};
+#endif

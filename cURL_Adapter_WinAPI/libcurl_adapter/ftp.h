@@ -9,11 +9,6 @@ extern const struct Curl_handler Curl_handler_ftps;
 #endif /* USE_SSL */
 #endif /* CURL_DISABLE_FTP */
 
-struct ftp_conn
-{
-
-};
-
 typedef enum
 {
     FTPFILE_MULTICWD = 1,       /* as defined by RFC1738 */
@@ -60,4 +55,32 @@ enum
     FTP_QUIT,
     FTP_LAST        /* never used */
 };
+
 typedef unsigned char ftpstate; /* use the enum values */
+
+// FTP connection state tracking
+struct ftp_conn 
+{
+    HINTERNET hInternet;        // WinInet session handle
+    HINTERNET hFtp;             // FTP connection handle
+    wchar_t* currentPath;       // Current working directory
+
+    struct {
+        bool inProgress;        // Transfer in progress flag
+        curl_off_t size;        // Transfer size
+        curl_off_t position;    // Current position
+        char* localFile;        // Local file path
+        char* remoteFile;       // Remote file path
+        bool binary;            // Binary transfer mode
+    } transfer;
+
+    struct {
+        bool passive;           // Passive mode enabled
+        bool ascii;             // ASCII mode enabled
+        bool ssl;               // SSL/TLS enabled
+        curl_ftpfile method;    // CWD method
+    } options;
+
+    ftpstate state;             // Current state in state machine
+    CURLcode result;            // Last operation result
+};

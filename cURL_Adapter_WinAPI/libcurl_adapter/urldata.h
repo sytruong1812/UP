@@ -1,7 +1,6 @@
 #pragma once
 #include "curl.h"
 #include "hash.h"
-#include "setup.h"
 #include "trace.h"
 #include "urlapi.h"
 #include "request.h"
@@ -54,7 +53,7 @@ typedef unsigned int curl_prot_t;
 #define CURL_MULTI_HANDLE		0x000bab1e
 #define GOOD_MULTI_HANDLE(x)	((x) && (x)->magic == CURL_MULTI_HANDLE)
 
-#include "curl.h"
+#include "setup.h"
 
 struct Curl_handler 
 {
@@ -121,7 +120,7 @@ struct connectdata {
 
 	union {
 #ifndef CURL_DISABLE_FTP
-		struct ftp_conn ftpc;
+		struct ftp_conn* ftpc;
 #endif
 #ifndef CURL_DISABLE_WEBSOCKETS
 		struct websocket* ws;

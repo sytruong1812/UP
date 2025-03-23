@@ -2,6 +2,11 @@
 #include "setup.h"
 #include "utils.h"
 
+
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
 enum expect100 
 {
     EXP100_SEND_DATA,           /* enough waiting, just send the body now */
@@ -80,3 +85,7 @@ bool Curl_req_sendbuf_empty(struct Curl_easy* data);
 CURLcode Curl_req_abort_sending(struct Curl_easy* data);
 CURLcode Curl_req_stop_send_recv(struct Curl_easy* data);
 CURLcode Curl_req_set_upload_done(struct Curl_easy* data);
+
+#ifdef  __cplusplus
+} /* end of extern "C" */
+#endif

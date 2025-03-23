@@ -40,3 +40,19 @@ void Curl_req_hard_reset(struct SingleRequest* req, struct Curl_easy* data)
 	req->shutdown = FALSE;
 }
 
+CURLcode Curl_req_start(SingleRequest* req, Curl_easy* data)
+{
+	req->done = FALSE;
+	req->upload_done = FALSE;
+	req->upload_aborted = FALSE;
+	req->download_done = FALSE;
+	req->eos_written = FALSE;
+	req->eos_read = FALSE;
+	req->eos_sent = FALSE;
+	req->ignorebody = FALSE;
+	req->shutdown = FALSE;
+	req->header = TRUE; /* assume header */
+
+	return CURLE_OK;
+}
+

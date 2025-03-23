@@ -1,13 +1,11 @@
 ﻿#include <string>
 #include <iostream>
-
 #include "cjson.h"
 #include "utils.h"
 
 #include "curl.h"
 #include "easy.h"
 #include "urldata.h"
-
 
 void TEST_GET();
 void TEST_POST();

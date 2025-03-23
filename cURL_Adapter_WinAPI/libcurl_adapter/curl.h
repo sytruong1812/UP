@@ -314,25 +314,52 @@ extern "C" {
         CURLE_FTP_BAD_FILE_LIST,
 
         /* WinHTTP specific errors */
-        CURLE_WINHTTP_OPEN_A_SESSION_ERROR,
-        CURLE_WINHTTP_CANNOT_CONNECT_SERVER,
-        CURLE_WINHTTP_CANNOT_SET_TIMEOUT,
-        CURLE_WINHTTP_OPEN_REQUEST_ERROR,
-        CURLE_WINHTTP_SET_CREDENTIALS_ERROR,
-        CURLE_WINHTTP_SET_OPTION_ERROR,
-        CURLE_WINHTTP_ADD_REQUEST_HEADER_ERROR,
-        CURLE_WINHTTP_SEND_REQUEST_ERROR,
-        CURLE_WINHTTP_RECV_RESPONSE_ERROR,
-        CURLE_WINHTTP_QUERY_DATA_ERROR,
-        CURLE_WINHTTP_READ_DATA_ERROR,
-        CURLE_WINHTTP_WRITE_DATA_ERROR,
-        CURLE_WINHTTP_WS_UPGRADE_ERROR,
-        CURLE_WINHTTP_WS_CLOSE_ERROR,
-        CURLE_WINHTTP_WS_SEND_DATA_ERROR,
-        CURLE_WINHTTP_WS_RECV_DATA_ERROR,
-        CURLE_FAILED_TO_ALLOCATE,
-        CURLE_URL_GET_ERROR,
-        CURLE_SET_CURLU_ERROR,
+        CURLE_WINHTTP_OPEN_A_SESSION_ERROR,          /* Failed to initialize WinHTTP session handle via WinHttpOpen() */
+        CURLE_WINHTTP_CANNOT_CONNECT_SERVER,         /* Unable to establish connection to server via WinHttpConnect() */
+        CURLE_WINHTTP_CANNOT_SET_TIMEOUT,            /* Failed to set timeout options using WinHttpSetTimeouts() */
+        CURLE_WINHTTP_OPEN_REQUEST_ERROR,            /* Failed to create HTTP request handle via WinHttpOpenRequest() */
+        CURLE_WINHTTP_SET_CREDENTIALS_ERROR,         /* Authentication failed when setting credentials via WinHttpSetCredentials() */
+        CURLE_WINHTTP_SET_OPTION_ERROR,              /* Failed to set WinHTTP option using WinHttpSetOption() */
+        CURLE_WINHTTP_ADD_REQUEST_HEADER_ERROR,      /* Failed to add headers to request via WinHttpAddRequestHeaders() */
+        CURLE_WINHTTP_SEND_REQUEST_ERROR,            /* Failed to send HTTP request using WinHttpSendRequest() */
+        CURLE_WINHTTP_RECV_RESPONSE_ERROR,           /* Failed to receive server response via WinHttpReceiveResponse() */
+        CURLE_WINHTTP_QUERY_DATA_ERROR,              /* Failed to query HTTP headers via WinHttpQueryHeaders() */
+        CURLE_WINHTTP_READ_DATA_ERROR,               /* Failed to read response data via WinHttpReadData() */
+        CURLE_WINHTTP_WRITE_DATA_ERROR,              /* Failed to write request data via WinHttpWriteData() */
+        CURLE_WINHTTP_WS_UPGRADE_ERROR,              /* Failed to upgrade to WebSocket protocol via WinHttpWebSocketCompleteUpgrade() */
+        CURLE_WINHTTP_WS_CLOSE_ERROR,                /* Error closing WebSocket connection via WinHttpWebSocketClose() */
+        CURLE_WINHTTP_WS_SEND_DATA_ERROR,            /* Failed to send WebSocket data via WinHttpWebSocketSend() */
+        CURLE_WINHTTP_WS_RECV_DATA_ERROR,            /* Failed to receive WebSocket data via WinHttpWebSocketReceive() */
+        CURLE_FAILED_TO_ALLOCATE,                    /* Failed to allocate memory for internal operations */
+        CURLE_URL_GET_ERROR,                         /* Failed to parse or process URL */
+        CURLE_SET_CURLU_ERROR,                       /* Failed to set URL parameters or components */
+
+        /* WinINet FTP specific errors */
+        CURLE_WININET_FTP_SESSION_ERROR = 90,        /* Failed to create WinInet session */
+        CURLE_WININET_FTP_CONNECT_ERROR,             /* Failed to connect to FTP server */
+        CURLE_WININET_FTP_SSL_ERROR,                 /* SSL configuration failed */
+        CURLE_WININET_FTP_TIMEOUT_ERROR,             /* Operation timed out */
+        CURLE_WININET_FTP_LOGIN_ERROR,               /* Authentication failed */
+        CURLE_WININET_FTP_ACCESS_DENIED,             /* Access denied to resource */
+        CURLE_WININET_FTP_CWD_ERROR,                 /* Failed to change directory */
+        CURLE_WININET_FTP_PWD_ERROR,                 /* Failed to get working directory */
+        CURLE_WININET_FTP_MKD_ERROR,                 /* Failed to create directory */
+        CURLE_WININET_FTP_RMD_ERROR,                 /* Failed to remove directory */
+        CURLE_WININET_FTP_DIR_LIST_ERROR,            /* Failed to list directory */
+        CURLE_WININET_FTP_TRANSFER_TYPE_ERROR,       /* Failed to set transfer type */
+        CURLE_WININET_FTP_PASSIVE_ERROR,             /* Failed to enter passive mode */
+        CURLE_WININET_FTP_PORT_ERROR,                /* Failed to set port */
+        CURLE_WININET_FTP_FILE_NOT_FOUND,            /* File not found on server */
+        CURLE_WININET_FTP_FILE_ACCESS_ERROR,         /* File access denied */
+        CURLE_WININET_FTP_FILE_SIZE_ERROR,           /* Failed to get file size */
+        CURLE_WININET_FTP_FILE_TRANSFER_ERROR,       /* File transfer failed */
+        CURLE_WININET_FTP_COMMAND_ERROR,             /* Command execution failed */
+        CURLE_WININET_FTP_RESPONSE_ERROR,            /* Invalid server response */
+        CURLE_WININET_FTP_TRANSFER_IN_PROGRESS,      /* Transfer already in progress */
+        CURLE_WININET_FTP_TRANSFER_ABORTED,          /* Transfer was aborted */
+        CURLE_WININET_FTP_TRANSFER_TIMEOUT,          /* Transfer timed out */
+        CURLE_WININET_FTP_OUT_OF_MEMORY,             /* Memory allocation failed */
+        CURLE_WININET_FTP_HANDLE_ERROR,              /* Invalid handle operation */
 
         /* Other protocol errors */
         CURLE_QUIC_CONNECT_ERROR,

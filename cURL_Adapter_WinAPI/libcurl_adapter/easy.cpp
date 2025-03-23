@@ -2,6 +2,7 @@
 #include "curl.h"
 #include "setopt.h"
 #include "urldata.h"
+#include "request.h"
 
 CURLcode curl_global_init(long flags)
 {
@@ -103,6 +104,10 @@ static CURLcode easy_transfer(struct Curl_multi* multi)
 	{
 		int still_running = 0;
 		mcode = curl_multi_perform(multi, &still_running);
+		if (!mcode && !still_running)
+		{
+
+		}
 	}
 	/* Make sure to return some kind of error if there was a multi problem */
 	if (mcode)

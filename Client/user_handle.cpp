@@ -1,11 +1,7 @@
-#include <queue>
+﻿#include <queue>
 #include <atomic>
 #include <conio.h>
 #include <sstream>
-
-#include <chrono> 
-#include <unordered_map>
-#include <unordered_set>
 
 #include "utils.h"
 #include "logger.h"
@@ -15,11 +11,9 @@
 #include "zlib/zstream/ozstream.h"
 
 std::atomic<BOOL> exitMonitorFlag(FALSE); // Shared variable to signal exit
-std::unordered_map<std::wstring, std::chrono::steady_clock::time_point> debounceMap;
-const std::chrono::milliseconds debounceInterval(500);
 
-
-namespace UserOperations {
+namespace UserOperations 
+{
 	BOOL UserHandle::RegisterAccount(const UserInfo& info)
 	{
 		HttpHeaders headers;
@@ -565,7 +559,7 @@ namespace UserOperations {
 		return FALSE;
 	}
 
-	
+
 	BOOL UserHandle::UploadFolder(const FolderInfo& folder)
 	{
 		HttpHeaders headers;
@@ -619,7 +613,7 @@ namespace UserOperations {
 		return TRUE;
 	}
 
-	
+
 	BOOL UserHandle::UploadFolderWithFilter(const std::wstring& folder_path, const std::wstring& filter)
 	{
 		FolderInfo folder;
@@ -640,34 +634,8 @@ namespace UserOperations {
 		return UpdateFolder(folder);
 	}
 
-	void UserHandle::MonitorFolder(const std::wstring& folder_path, const std::wstring& filter, DWORD reload_time)
-	{
-		if (!FolderHandle::GetFolderInfo(folder_path, snapshot_))
-		{
-			LOG_ERROR_A("Get snapshot error!");
-			return;
-		}
-		LOG_INFO_A("-> Starting folder monitoring...");
-		do
-		{
-			FolderInfo new_snapshot;
-			if (!FolderHandle::GetFolderFilter(folder_path, filter, new_snapshot))
-			{
-				LOG_ERROR_A("Get new snapshot error!");
-				break;
-			}
-
-			LOG_INFO_A("-> Checking for changes...");
-			if (new_snapshot != snapshot_)
-			{
-				LOG_INFO_A("-> Changes detected in the folder.");
 
 
-				snapshot_ = new_snapshot;
-			}
-			std::this_thread::sleep_for(std::chrono::seconds(reload_time)); // Default 30s 
-		} while (true);
-	}
 
 	//---- Monitor user input to allow exiting
 	DWORD WINAPI MonitorKeyboardInput(LPVOID lpParam)
@@ -688,46 +656,6 @@ namespace UserOperations {
 		}
 		return 0;
 	}
-	//---- Debounce method
-	BOOL ProcessDebounce(const std::wstring& filePath)
-	{
-		auto now = std::chrono::steady_clock::now();      // Step1: Get the current steady clock time
-		auto it = debounceMap.find(filePath);             // Step2: Look up the file path in the debounce map
-
-		if (it != debounceMap.end())                      // Step3: If the file has been processed before
-		{
-			if (now - it->second < debounceInterval)      // Step4: If the elapsed time since last processing is less than debounce interval
-			{
-				return FALSE;                             // Skip processing to avoid duplicate handling
-			}
-		}
-		debounceMap[filePath] = now;                      // Step5: Update the last processed time to now
-		return TRUE;                                      // Allow processing this event
-	}
-	//---- Remove action name
-	void RemoveRedundantUpdates(ACTIONS& actions)
-	{
-		// Step 1: Collect all paths involved in rename operations
-		std::unordered_set<std::wstring> renamedPaths;
-
-		for (const auto& action : actions)
-		{
-			if (action.type == ACTION_RENAME)
-			{
-				renamedPaths.insert(action.path);       // old path
-				renamedPaths.insert(action.new_path);   // new path
-			}
-		}
-
-		// Step 2: Remove any UPDATE actions that refer to renamed paths
-		actions.erase(std::remove_if(actions.begin(), actions.end(),
-			[&renamedPaths](const SyncAction& action) 
-			{
-					return action.type == ACTION_UPDATE && renamedPaths.find(action.path) != renamedPaths.end();
-			}),
-			actions.end());
-	}
-
 
 	BOOL UserHandle::PrepareWatch(FolderInfo& folder)
 	{
@@ -735,384 +663,335 @@ namespace UserOperations {
 		HttpResponse response;
 		cache_api->loadFileCache();
 
+		// Check authentication
 		if (!this->logged_in || this->token_id.empty() || this->user_name.empty())
 		{
-			LOG_ERROR_W(L"[Client]: You need to login to use this function!");
+			LOG_ERROR_W(L"[Auth] Authentication required - User not logged in");
 			return FALSE;
 		}
+
+		// Setup HTTP headers
 		headers.SetHeader(L"Accept-Encoding", L"gzip, deflate");
 		headers.SetHeader(L"Authorization", L"Bearer " + this->token_id);
-		headers.SetHeader("Content-Type", "application/json");
+		headers.SetHeader(L"Content-Type", L"application/json");
 
-		// Step1: Send folder tree to server
+		// Step 1: Send folder tree to server for comparison
+		LOG_INFO_W(L"[Sync] Sending folder structure to server for comparison");
 		std::string json_folder_tree = JsonUtility::CreateJsonFolderTree(folder);
 		response = net_api->Post(this->user_name + L"/files/compare", headers, json_folder_tree);
+
 		if (response.GetStatusCode() != 200)
 		{
-			LOG_ERROR_W(L"[Server][%ld]: %s", response.GetStatusCode(), response.GetContentWString().c_str());
+			LOG_ERROR_W(L"[Server] Request failed with status %ld: %s",
+				response.GetStatusCode(),
+				response.GetContentWString().c_str());
 			return FALSE;
 		}
-		// Step2: Check files miss on server
+
+		// Step 2: Parse server response for missing files
+		LOG_INFO_W(L"[Sync] Analyzing server response for missing files");
 		std::vector<FileMissing> files_missing;
 		if (response.CheckContentIsJson())
 		{
 			std::string json_response = response.GetContentString();
 			JsonUtility::ParserJsonFileMissResponse(json_response, files_missing);
 		}
-		// Step3: Upload files missing
-		for (int i = 0; i < files_missing.size(); i++)
+
+		// Step 3: Upload missing files to server
+		if (!files_missing.empty())
 		{
-			FileMissing file_miss = files_missing[i];
-			FileInfo file = folder.FindFileRecursive(file_miss.first, file_miss.second);
-			LOG_INFO_W(L"File missing: %s | %s", file.GetFileName().c_str(), file.GetParentFolder()->GetPathToRoot().c_str());
-			if (!UploadFile(file))
+			LOG_INFO_W(L"[Sync] Found %d files missing on server", files_missing.size());
+
+			for (size_t i = 0; i < files_missing.size(); i++)
 			{
-				return FALSE;
+				FileMissing file_miss = files_missing[i];
+				FileInfo file = folder.FindFileRecursive(file_miss.first, file_miss.second);
+
+				LOG_INFO_W(L"[Upload] Processing file %d/%d: %s",
+					i + 1,
+					files_missing.size(),
+					file.GetFilePath().c_str());
+
+				if (!UploadFile(file))
+				{
+					LOG_ERROR_W(L"[Upload] Failed to upload file: %s", file.GetFilePath().c_str());
+					return FALSE;
+				}
 			}
+			LOG_INFO_W(L"[Sync] Successfully uploaded all missing files");
+		}
+		else
+		{
+			LOG_INFO_W(L"[Sync] No missing files found on server");
+		}
+
+		LOG_INFO_W(L"[Watch] Watch preparation completed successfully");
+		return TRUE;
+	}
+
+	BOOL UserHandle::WatchFolderSync(const std::wstring& folder_path, const std::wstring& filter, DWORD wait)
+	{
+		// Get initial snapshot
+		if (!FolderHandle::GetFolderFilter(folder_path, filter, current_snapshot_)) {
+			LOG_ERROR_W(L"[Snapshot] Failed to get initial folder tree for: %s", folder_path.c_str());
+			return FALSE;
+		}
+		LOG_INFO_W(L"[Snapshot] Successfully created folder tree for: %s", folder_path.c_str());
+
+		// Prepare watch operation
+		if (!PrepareWatch(current_snapshot_)) {
+			LOG_ERROR_W(L"[Watch] Failed to prepare watch operation for folder: %s", folder_path.c_str());
+			return FALSE;
+		}
+
+		// Create directory change notification handle
+		HANDLE hDir = CreateFileW(folder_path.c_str(), FILE_LIST_DIRECTORY,
+			FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+			NULL,
+			OPEN_EXISTING,
+			FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED,
+			NULL
+		);
+
+		if (hDir == INVALID_HANDLE_VALUE) {
+			LOG_ERROR_W(L"[System] Failed to create directory handle. Error code: %d", GetLastError());
+			return FALSE;
+		}
+
+		// Set up overlapped structure
+		OVERLAPPED overlapped = { 0 };
+		overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+		if (!overlapped.hEvent) {
+			LOG_ERROR_W(L"[System] Failed to create event handle. Error code: %d", GetLastError());
+			CloseHandle(hDir);
+			return FALSE;
+		}
+
+		// Buffer for changes
+		BYTE buffer[BUFFER_SIZE] = { 0 };
+		DWORD bytesReturned = 0;
+
+		// Create keyboard monitor thread
+		HANDLE hKeyboard = CreateThread(NULL, 0, MonitorKeyboardInput, this, 0, NULL);
+		if (!hKeyboard) {
+			LOG_ERROR_W(L"[System] Failed to create keyboard monitor thread. Error code: %d", GetLastError());
+			CloseHandle(overlapped.hEvent);
+			CloseHandle(hDir);
+			return FALSE;
+		}
+
+		LOG_INFO_W(L"[Watch] Starting file system watch on: %s", folder_path.c_str());
+		LOG_INFO_W(L"[Watch] Press 'Q' to exit monitoring");
+
+		// Array of handles to wait on
+		HANDLE handles[2] = { overlapped.hEvent, hKeyboard };
+
+		while (!exitMonitorFlag) 
+		{
+			// Start async watch
+			BOOL success = ReadDirectoryChangesW(hDir, 
+					buffer, BUFFER_SIZE, TRUE,  // Watch subtree
+					FILE_NOTIFY_CHANGE_FILE_NAME
+					| FILE_NOTIFY_CHANGE_DIR_NAME
+					| FILE_NOTIFY_CHANGE_LAST_WRITE,
+					&bytesReturned, &overlapped, NULL);
+
+			if (!success) {
+				LOG_ERROR_W(L"[System] ReadDirectoryChangesW failed. Error code: %d", GetLastError());
+				break;
+			}
+
+			// Wait for either directory change or keyboard input
+			DWORD waitResult = WaitForMultipleObjects(2, handles, FALSE, wait);
+			switch (waitResult)
+			{
+			case WAIT_OBJECT_0:     // Directory change event
+			{
+				// Changes detected, get a new snapshot and compare
+				FolderInfo new_snapshot;
+				if (FolderHandle::GetFolderFilter(folder_path, filter, new_snapshot))
+				{
+					std::lock_guard<std::mutex> lock(snapshot_mutex_);
+					DetectAndProcessChanges(current_snapshot_, new_snapshot);
+					current_snapshot_ = std::move(new_snapshot);
+				}
+				else {
+					LOG_ERROR_W(L"[Snapshot] Failed to get updated folder tree");
+				}
+				// Reset event for next notification
+				ResetEvent(overlapped.hEvent);
+			}
+			break;
+			case WAIT_OBJECT_0 + 1: // Keyboard thread completed
+			{
+				LOG_INFO_W(L"[Watch] Received exit signal from keyboard");
+				exitMonitorFlag = true;
+			}
+			break;
+			case WAIT_TIMEOUT:
+				// Timeout occurred, continue monitoring
+				break;
+			default:
+			{
+				LOG_ERROR_W(L"Wait failed with error %d", GetLastError());
+				exitMonitorFlag = true;
+			}
+			break;
+			}
+		}
+
+		// Cleanup
+		if (hKeyboard) {
+			CloseHandle(hKeyboard);
+		}
+		if (overlapped.hEvent) {
+			CloseHandle(overlapped.hEvent);
+		}
+		if (hDir) {
+			CloseHandle(hDir);
 		}
 		return TRUE;
 	}
 
-	void UserHandle::MonitorAction(const std::wstring& base_path, FILE_NOTIFY_INFORMATION* notify, ACTIONS& actions)
+	void UserHandle::DetectAndProcessChanges(const FolderInfo& old_snapshot, const FolderInfo& new_snapshot)
 	{
-		std::wstring pendingOldRename;
-		FILE_NOTIFY_INFORMATION* pNotify = notify;
-		do
+		ActionList actions;
+
+		// 1. Check for deleted and renamed files - Compare old snapshot with new snapshot
+		for (const auto& old_file : old_snapshot.GetFilesRecursive())
 		{
-			std::wstring fileName(pNotify->FileName, pNotify->FileNameLength / sizeof(WCHAR));
-			std::wstring fullPath = base_path + L"\\" + fileName;
+			FileInfo new_file = new_snapshot.FindFileRecursive
+			(
+				old_file.GetParentFolder()->GetPathToRoot(),
+				old_file.GetFileName()
+			);
 
-			switch (pNotify->Action)
-			{
-				case FILE_ACTION_ADDED:
-					if (ProcessDebounce(fullPath))
-					{
-						actions.push_back({ SyncActionType::ACTION_UPLOAD, Helper::PathHelper::isValidFilePath(fullPath), fullPath, L"" });
-						LOG_INFO_W(L"[UPLOAD] %s", fullPath.c_str());
+			// If file not found in new snapshot, check if it was renamed
+			if (new_file == FileInfo()) {
+				bool isRenamed = false;
+				// Look for a file with same size and timestamp but different name
+				for (const auto& potential_rename : new_snapshot.GetFilesRecursive())
+				{
+					FILETIME potentialTime = potential_rename.GetLastWriteTime();
+					FILETIME oldFileTime = old_file.GetLastWriteTime();
+
+					if (potential_rename.GetFileSize() == old_file.GetFileSize() &&
+						CompareFileTime(&potentialTime, &oldFileTime) == 0 &&
+						potential_rename.GetFileName() != old_file.GetFileName()) {
+						// Found renamed file
+						actions.push_back({
+							ACTION_RENAME,
+							TRUE,
+							potential_rename.GetFilePath(),  // new path
+							old_file.GetFilePath()          // old path
+							});
+						LOG_INFO_W(L"[RENAME] %s -> %s",
+							old_file.GetFilePath().c_str(),
+							potential_rename.GetFilePath().c_str());
+						isRenamed = true;
+						break;
 					}
-					break;
+				}
 
-				case FILE_ACTION_MODIFIED:
-					if (ProcessDebounce(fullPath))
-					{
-						actions.push_back({ SyncActionType::ACTION_UPDATE, Helper::PathHelper::isValidFilePath(fullPath), fullPath, L"" });
-						LOG_INFO_W(L"[UPDATE] %s", fullPath.c_str());
-					}
-					break;
-
-				case FILE_ACTION_REMOVED:
-					actions.push_back({ SyncActionType::ACTION_DELETE, Helper::PathHelper::isValidFilePath(fullPath), fullPath, L"" });
-					LOG_INFO_W(L"[DELETE] %s", fullPath.c_str());
-					break;
-
-				case FILE_ACTION_RENAMED_OLD_NAME:
-					pendingOldRename = fullPath;
-					break;
-
-				case FILE_ACTION_RENAMED_NEW_NAME:
-					if (!pendingOldRename.empty())
-					{
-						if (ProcessDebounce(pendingOldRename))
-						{
-							actions.push_back({ SyncActionType::ACTION_RENAME, Helper::PathHelper::isValidFilePath(fullPath), pendingOldRename, fullPath });
-							LOG_INFO_W(L"[RENAME] %s -> %s", pendingOldRename.c_str(), fullPath.c_str());
-						}
-						pendingOldRename.clear();
-					}
-					break;
+				// If not renamed, then it was deleted
+				if (!isRenamed) {
+					actions.push_back({
+						ACTION_DELETE,
+						TRUE,
+						old_file.GetFilePath(),
+						L""
+						});
+					LOG_INFO_W(L"[DELETE] %s", old_file.GetFilePath().c_str());
+				}
 			}
-			if (pNotify->NextEntryOffset == 0)
-			{
-				break;
-			}
-			pNotify = (FILE_NOTIFY_INFORMATION*)((LPBYTE)pNotify + pNotify->NextEntryOffset);
+		}
 
-		} while (TRUE);
+		// 2. Check for new and modified files - Compare new snapshot with old snapshot
+		for (const auto& new_file : new_snapshot.GetFilesRecursive()) {
+			// Skip if this is a renamed file (already handled)
+			bool isRenamed = false;
+			for (const auto& action : actions) {
+				if (action.type == ACTION_RENAME && action.path == new_file.GetFilePath()) {
+					isRenamed = true;
+					break;
+				}
+			}
+			if (isRenamed) continue;
+
+			FileInfo old_file = old_snapshot.FindFileRecursive
+			(
+				new_file.GetParentFolder()->GetPathToRoot(),
+				new_file.GetFileName()
+			);
+
+			if (old_file == FileInfo()) {
+				// File not found in old snapshot - it's a new file
+				actions.push_back({
+					ACTION_UPLOAD,
+					TRUE,
+					new_file.GetFilePath(),
+					L""
+					});
+				LOG_INFO_W(L"[UPLOAD] %s", new_file.GetFilePath().c_str());
+			}
+			else {
+				// Check for file modifications by comparing size and last write time
+				FILETIME newTime = new_file.GetLastWriteTime();
+				FILETIME oldTime = old_file.GetLastWriteTime();
+
+				if (new_file.GetFileSize() != old_file.GetFileSize() ||
+					CompareFileTime(&newTime, &oldTime) != 0) {
+					actions.push_back({
+						ACTION_UPDATE,
+						TRUE,
+						new_file.GetFilePath(),
+						L""
+						});
+					LOG_INFO_W(L"[UPDATE] %s", new_file.GetFilePath().c_str());
+				}
+			}
+		}
+
+		// Process all detected changes using the action list
+		if (!actions.empty())
+		{
+			ProcessSync(actions, const_cast<FolderInfo&>(new_snapshot));
+		}
 	}
 
-	BOOL UserHandle::ProcessSync(ACTIONS actions, FolderInfo& folder)
+	BOOL UserHandle::ProcessSync(ActionList actions, FolderInfo& folder)
 	{
-		if (actions.empty())
+		if (actions.empty()) {
 			return TRUE;
+		}
 
 		for (const auto& action : actions)
 		{
 			switch (action.type)
 			{
-				case SyncActionType::ACTION_UPLOAD:
-					LOG_INFO_W(L" ---> Upload File To Server: %s", action.path.c_str());
-					// TODO: Add upload logic here
-					break;
+			case SyncActionType::ACTION_UPLOAD:
+				LOG_INFO_W(L" ---> Upload File To Server: %s", action.path.c_str());
+				// TODO: Add upload logic here
+				break;
 
-				case SyncActionType::ACTION_UPDATE:
-					LOG_INFO_W(L" ---> Update File To Server: %s", action.path.c_str());
-					// TODO: Add update logic here
-					break;
+			case SyncActionType::ACTION_UPDATE:
+				LOG_INFO_W(L" ---> Update File To Server: %s", action.path.c_str());
+				// TODO: Add update logic here
+				break;
 
-				case SyncActionType::ACTION_DELETE:
-					LOG_INFO_W(L" ---> Delete File On Server: %s", action.path.c_str());
-					// TODO: Add delete logic here
-					break;
+			case SyncActionType::ACTION_DELETE:
+				LOG_INFO_W(L" ---> Delete File On Server: %s", action.path.c_str());
+				// TODO: Add delete logic here
+				break;
 
-				case SyncActionType::ACTION_RENAME:
-					LOG_INFO_W(L" ---> Rename File On Server: %s -> %s", action.path.c_str(), action.new_path.c_str());
-					// TODO: Add rename logic here
-					break;
+			case SyncActionType::ACTION_RENAME:
+				LOG_INFO_W(L" ---> Rename File On Server: %s -> %s", action.path.c_str(), action.new_path.c_str());
+				// TODO: Add rename logic here
+				break;
 			}
 		}
 		return TRUE;
 	}
-
-
-	//BOOL UserHandle::WatchFolderSync(const std::wstring& folder_path, const std::wstring& filter, DWORD wait)
-	//{
-	//	HANDLE dwHandles[2];
-	//	BYTE lpBuffer[10000];
-	//	const DWORD dwNotificationFlags = FILE_NOTIFY_CHANGE_LAST_WRITE
-	//									| FILE_NOTIFY_CHANGE_CREATION
-	//									| FILE_NOTIFY_CHANGE_FILE_NAME
-	//									| FILE_NOTIFY_CHANGE_DIR_NAME;
-
-	//	/*=========================[Step 1: Get Folder Tree]==============================*/
-	//	FolderInfo folder_sync;
-	//	if (!FolderHandle::GetFolderFilter(folder_path, filter, folder_sync))
-	//	{
-	//		LOG_ERROR_W(L"Failed to get folder filter for: %s", folder_path.c_str());
-	//		return FALSE;
-	//	}
-	//	LOG_INFO_W(L"Get folder tree for: %s --> OK", folder_sync.GetFolderName().c_str());
-
-	//	/*=========================[Step 2: Prepare Watch]==============================*/
-	//	//if (!PrepareWatch(folder_sync))
-	//	//{
-	//	//	LOG_ERROR_W(L"Failed to prepare watch with server metadata for folder: %s", folder_sync.GetFolderName().c_str());
-	//	//	return FALSE;
-	//	//}
-	//	//LOG_INFO_W(L"Prepare watch with server metadata --> OK");
-	//	/*=========================[Step 3: ]==============================*/
-	//	HANDLE hDirectory = CreateFileW(folder_path.c_str(),
-	//									GENERIC_READ,
-	//									FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE,
-	//									NULL, OPEN_EXISTING,
-	//									FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED,
-	//									NULL);
-	//	if (hDirectory == INVALID_HANDLE_VALUE)
-	//	{
-	//		LOG_ERROR_W(L"CreateFile(folder to trace) function failed = %ld", GetLastError());
-	//		return FALSE;
-	//	}
-
-	//	HANDLE hEvent = CreateEventW(NULL, FALSE, FALSE, NULL);
-	//	if (hEvent == NULL)
-	//	{
-	//		LOG_ERROR_W(L"Cannot create event! error code = %ld", GetLastError());
-	//		return FALSE;
-	//	}
-
-	//	// Start the keyboard monitoring thread
-	//	HANDLE keyboardMoniterThread = CreateThread(NULL, 0, MonitorKeyboardInput, NULL, 0, 0);
-
-	//	std::wcout << L"Watching for: " << folder_path << L" | Press 'Q' to exit!" << std::endl;
-
-	//	ACTIONS actions;
-	//	auto lastActionTime = std::chrono::steady_clock::now();
-	//	const std::chrono::milliseconds syncDelay(1000);  // wait 1s before processing batch
-
-	//	while (!exitMonitorFlag)
-	//	{
-	//		OVERLAPPED overlapped = {};
-	//		overlapped.hEvent = hEvent;
-	//		LPOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine = NULL;
-
-	//		BOOL result = ReadDirectoryChangesW(hDirectory,
-	//											lpBuffer, sizeof(lpBuffer), TRUE,
-	//											dwNotificationFlags, 0, &overlapped, lpCompletionRoutine);
-	//		if (result)
-	//		{
-	//			dwHandles[0] = overlapped.hEvent;
-	//			dwHandles[1] = keyboardMoniterThread;
-
-	//			DWORD dwWaitStatus = WaitForMultipleObjects(_countof(dwHandles), dwHandles, FALSE, wait);
-	//			switch (dwWaitStatus)
-	//			{
-	//				case WAIT_OBJECT_0: 
-	//				{
-	//					DWORD NumberOfBytesTransferred = 0;
-	//					if (!GetOverlappedResult(hDirectory, &overlapped, &NumberOfBytesTransferred, FALSE))
-	//					{
-	//						LOG_ERROR_W(L"GetOverlappedResult() return error = %ld", GetLastError());
-	//					}
-	//					else if (NumberOfBytesTransferred > 0)
-	//					{
-	//						MonitorAction(folder_path, (FILE_NOTIFY_INFORMATION*)lpBuffer, actions);
-	//						
-	//						
-
-	//						ResetEvent(overlapped.hEvent);
-	//					}
-	//					break;
-	//				}
-	//				case WAIT_OBJECT_0 + 1:
-	//				{
-	//					std::wcout << L"User has pressed 'Q'. Exiting the monitoring loop..." << std::endl;
-	//					exitMonitorFlag = TRUE;
-	//					break;
-	//				}
-	//				case WAIT_TIMEOUT:
-	//				{
-	//					RemoveRedundantUpdates(actions);
-
-	//					ProcessSync(actions, folder_sync);
-
-	//					actions.clear();
-	//					break;
-	//				}
-	//				case WAIT_IO_COMPLETION:
-	//					break;
-
-	//				default:
-	//				{
-	//					LOG_ERROR_W(L"Unhandled status = %ld", dwWaitStatus);
-	//					ExitProcess(GetLastError());
-	//					break;
-	//				}
-	//			}
-	//		}
-	//		else
-	//		{
-	//			LOG_ERROR_W(L"ReadDirectoryChangesW error = %lld", GetLastError());
-	//		}
-	//	}
-
-	//	// Cleanup
-	//	if (hEvent) CloseHandle(hEvent);
-	//	if (hDirectory) CloseHandle(hDirectory);
-	//	if (keyboardMoniterThread) CloseHandle(keyboardMoniterThread);
-
-	//	return TRUE;
-	//}
-
-	BOOL UserHandle::WatchFolderSync(const std::wstring& folder_path, const std::wstring& filter, DWORD wait)
-	{
-		HANDLE dwHandles[2];
-		BYTE lpBuffer[10000];
-		const DWORD dwNotificationFlags =
-			FILE_NOTIFY_CHANGE_LAST_WRITE |
-			FILE_NOTIFY_CHANGE_CREATION |
-			FILE_NOTIFY_CHANGE_FILE_NAME |
-			FILE_NOTIFY_CHANGE_DIR_NAME;
-
-		// [Step 1: Get folder tree]
-		FolderInfo folder_sync;
-		if (!FolderHandle::GetFolderFilter(folder_path, filter, folder_sync))
-		{
-			LOG_ERROR_W(L"Failed to get folder filter for: %s", folder_path.c_str());
-			return FALSE;
-		}
-		LOG_INFO_W(L"Get folder tree for: %s --> OK", folder_sync.GetFolderName().c_str());
-
-		// [Step 2: Prepare watch]
-		//if (!PrepareWatch(folder_sync))
-		//{
-		//	LOG_ERROR_W(L"Failed to prepare watch with server metadata for folder: %s", folder_sync.GetFolderName().c_str());
-		//	return FALSE;
-		//}
-		//LOG_INFO_W(L"Prepare watch with server metadata --> OK");
-
-		// [Step 3: Prepare watch]
-		HANDLE hDirectory = CreateFileW(folder_path.c_str(),
-			GENERIC_READ,
-			FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE,
-			NULL, OPEN_EXISTING,
-			FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED,
-			NULL);
-		if (hDirectory == INVALID_HANDLE_VALUE)
-		{
-			LOG_ERROR_W(L"CreateFile(folder to trace) function failed = %ld", GetLastError());
-			return FALSE;
-		}
-
-		HANDLE hEvent = CreateEventW(NULL, FALSE, FALSE, NULL);
-		if (hEvent == NULL)
-		{
-			LOG_ERROR_W(L"Cannot create event! error code = %ld", GetLastError());
-			return FALSE;
-		}
-
-		HANDLE keyboardMoniterThread = CreateThread(NULL, 0, MonitorKeyboardInput, NULL, 0, 0);
-		std::wcout << L"Watching for: " << folder_path << L" | Press 'Q' to exit!" << std::endl;
-
-		ACTIONS actions;
-		const size_t batchThreshold = 10;
-		const std::chrono::milliseconds syncDelay(1000);
-		auto lastActionTime = std::chrono::steady_clock::now();
-
-		while (!exitMonitorFlag)
-		{
-			OVERLAPPED overlapped = {};
-			overlapped.hEvent = hEvent;
-			LPOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine = NULL;
-
-			BOOL result = ReadDirectoryChangesW(hDirectory,
-				lpBuffer, sizeof(lpBuffer), TRUE,
-				dwNotificationFlags, 0, &overlapped, lpCompletionRoutine);
-
-			if (result)
-			{
-				dwHandles[0] = overlapped.hEvent;
-				dwHandles[1] = keyboardMoniterThread;
-
-				DWORD dwWaitStatus = WaitForMultipleObjects(_countof(dwHandles), dwHandles, FALSE, wait);
-				switch (dwWaitStatus)
-				{
-					case WAIT_OBJECT_0: // Directory changed
-					{
-						DWORD NumberOfBytesTransferred = 0;
-						if (GetOverlappedResult(hDirectory, &overlapped, &NumberOfBytesTransferred, FALSE) && NumberOfBytesTransferred > 0)
-						{
-							MonitorAction(folder_path, (FILE_NOTIFY_INFORMATION*)lpBuffer, actions);
-							lastActionTime = std::chrono::steady_clock::now();
-							ResetEvent(overlapped.hEvent);
-						}
-						break;
-					}
-					case WAIT_OBJECT_0 + 1: // Q pressed
-					{
-						std::wcout << L"User has pressed 'Q'. Exiting the monitoring loop..." << std::endl;
-						exitMonitorFlag = TRUE;
-						break;
-					}
-					case WAIT_TIMEOUT: // Timer tick
-					{
-						auto now = std::chrono::steady_clock::now();
-						if (!actions.empty() &&
-							(actions.size() >= batchThreshold || now - lastActionTime >= syncDelay))
-						{
-							RemoveRedundantUpdates(actions);
-							ProcessSync(actions, folder_sync);
-							actions.clear();
-						}
-						break;
-					}
-					default:
-						LOG_ERROR_W(L"Unhandled status = %ld", dwWaitStatus);
-						ExitProcess(GetLastError());
-						break;
-				}
-			}
-			else
-			{
-				LOG_ERROR_W(L"ReadDirectoryChangesW error = %lld", GetLastError());
-			}
-		}
-
-		if (hEvent) CloseHandle(hEvent);
-		if (hDirectory) CloseHandle(hDirectory);
-		if (keyboardMoniterThread) CloseHandle(keyboardMoniterThread);
-
-		return TRUE;
-	}
-
 
 	//---- Private method
 	BOOL UserHandle::ProcessFileAdd(FolderInfo& folder, std::wstring wSubName)

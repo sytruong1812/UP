@@ -237,14 +237,16 @@ namespace Helper
         return ft;
     }
 
-    BOOL PathHelper::isDirectory(const std::wstring& path)
+    BOOL PathHelper::isFile(const std::wstring& path)
     {
-        DWORD attribute = GetFileAttributesW(path.c_str());
-        if (attribute & FILE_ATTRIBUTE_DIRECTORY)
-        {
-            return TRUE;
-        }
-        return FALSE;
+        DWORD attrs = GetFileAttributesW(path.c_str());
+        return (attrs != INVALID_FILE_ATTRIBUTES) && !(attrs & FILE_ATTRIBUTE_DIRECTORY);
+    }
+
+    BOOL PathHelper::isFolder(const std::wstring& path)
+    {
+        DWORD attrs = GetFileAttributesW(path.c_str());
+        return (attrs != INVALID_FILE_ATTRIBUTES) && (attrs & FILE_ATTRIBUTE_DIRECTORY);
     }
 
     BOOL PathHelper::isValidFilePath(const std::wstring& path)

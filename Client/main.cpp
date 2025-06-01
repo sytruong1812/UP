@@ -81,11 +81,11 @@ void TEST()
 void TEST_1()
 {
 	UserHandle handler;
-	std::wstring folder_path = L"E:\\DEV\\SE33\\Resource\\Cloud_Storage\\folder_sync";
+	std::wstring folder_path = L"D:\\DEV\\SE31\\Resource\\folder";
 
-	handler.MonitorFolder(folder_path);
+	//handler.MonitorFolder(folder_path);
 
-	//handler.WatchFolderSync(folder_path, L"*");
+	handler.WatchFolderSync(folder_path, L"*");
 }
 
 void TEST_2() 

@@ -1,33 +1,32 @@
 #pragma once
 #include <thread> 
-
 #include "logger.h"
 #include "file_cache.h"
 #include "http_client.h"
 #include "json_utility.h"
 #include "folder_handle.h"
+#include <mutex>
 
 using namespace NetworkOperations;
 using namespace ResourceOperations;
 
 namespace UserOperations 
 {
-    enum SyncActionType 
+    enum SyncActionType
     {
         ACTION_UPLOAD,
         ACTION_DELETE,
         ACTION_UPDATE,
         ACTION_RENAME
     };
-    struct SyncAction 
+    struct SyncAction
     {
         SyncActionType type;
         BOOL is_file_path;
         std::wstring path;
         std::wstring new_path; // optional for rename
     };
-    typedef std::vector<SyncAction> ACTIONS;
-
+    typedef std::vector<SyncAction> ActionList;
 
     class UserHandle 
     {
@@ -37,7 +36,10 @@ namespace UserOperations
         BOOL logged_in = FALSE;
         HttpClient* net_api;
         FileCache* cache_api;
-        FolderInfo snapshot_; // Last known state of the folder
+
+        FolderInfo current_snapshot_;
+        std::mutex snapshot_mutex_;
+
     public:
         UserHandle() : net_api(NULL), cache_api(NULL) {}
         void SetupNetwork(HttpClient* net) { net_api = net; }
@@ -63,8 +65,6 @@ namespace UserOperations
         BOOL UploadFolderWithFilter(const std::wstring& folder_path, const std::wstring& filter);
         BOOL UpdateFolderWithFilter(const std::wstring& folder_path, const std::wstring& filter);
 
-        void MonitorFolder(const std::wstring& folder_path, const std::wstring& filter = L"*.*", DWORD reload_time = 30);
-
         BOOL WatchFolderSync(const std::wstring& folder_path, const std::wstring& filter = L"*.*", DWORD wait = INFINITE);
 
     private:
@@ -73,8 +73,8 @@ namespace UserOperations
         
         //---- NEW ------
         BOOL PrepareWatch(FolderInfo& folder);
-        void MonitorAction(const std::wstring& base_path, FILE_NOTIFY_INFORMATION* notify, ACTIONS& actions);
-        BOOL ProcessSync(ACTIONS actions, FolderInfo& folder);
+		void DetectAndProcessChanges(const FolderInfo& old_snapshot, const FolderInfo& new_snapshot);
+        BOOL ProcessSync(ActionList actions, FolderInfo& folder);
         //---- NEW ------
 
         BOOL ProcessFileAdd(FolderInfo& folder, std::wstring wSubName);

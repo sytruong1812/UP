@@ -34,7 +34,8 @@ namespace Helper
     class PathHelper 
     {
     public:
-        static BOOL isDirectory(const std::wstring& path);
+        static BOOL isFile(const std::wstring& path);
+        static BOOL isFolder(const std::wstring& path);
         static BOOL isValidFilePath(const std::wstring& path);
         static std::wstring extractFolderFromFilePath(const std::wstring& path);
         static std::wstring extractFileNameFromFilePath(const std::wstring& path);

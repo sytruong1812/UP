@@ -301,25 +301,46 @@ namespace ResourceOperations
         FileInfo GetFile(int index) const { return files_[index]; }
         FolderInfo GetChildren(int index) const { return children_[index]; }
 
-        FileInfo FindFileRecursive(const std::wstring& folder_path, const std::wstring& file_name) 
-        {
-            std::wstring path = this->GetPathToRoot();
-            if (path.compare(folder_path) == 0)
-            {
-                auto it = std::find_if(files_.begin(), files_.end(), 
-                    [&file_name](const FileInfo& file) 
-                    {
+        BOOL HasFileRecursive(const std::wstring& fileName, const std::wstring& relativePath) const {
+            // Compare current path with relative path
+            std::wstring currentPath = this->GetPathToRoot();
+            if (currentPath.compare(relativePath) == 0) {
+                // Find file in current directory
+                auto it = std::find_if(files_.begin(), files_.end(),
+                    [&fileName](const FileInfo& file) {
+                        return file.GetFileName() == fileName;
+                    });
+                return (it != files_.end());
+            }
+
+            // Recursively search in subdirectories
+            for (const auto& child : children_) {
+                if (child.HasFileRecursive(fileName, relativePath)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        FileInfo FindFileRecursive(const std::wstring& folder_path, const std::wstring& file_name) const {
+            // Compare current path with folder path
+            std::wstring currentPath = this->GetPathToRoot();
+            if (currentPath.compare(folder_path) == 0) {
+                // Find file in current directory
+                auto it = std::find_if(files_.begin(), files_.end(),
+                    [&file_name](const FileInfo& file) {
                         return file.GetFileName() == file_name;
                     });
                 return (it != files_.end()) ? *it : FileInfo();
             }
-            else
-            {
-                for (int i = 0; i < children_.size(); i++)
-                {
-                    return children_[i].FindFileRecursive(folder_path, file_name);
+
+            // Recursively search in subdirectories
+            for (const auto& child : children_) {
+                FileInfo result = child.FindFileRecursive(folder_path, file_name);
+                if (!result.GetFileName().empty()) {  // If file is found
+                    return result;
                 }
             }
+            return FileInfo();  // Return empty FileInfo if not found
         }
         FolderInfo FindChildrenRecursive(const std::wstring& folder_name) 
         {
@@ -453,8 +474,6 @@ namespace ResourceOperations
             }
             return pathCombined;
         }
-
-        
 
     private:
         BOOL is_root_;                          // TRUE if this is the root folder

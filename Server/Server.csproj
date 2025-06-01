@@ -1,0 +1,204 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{68894B65-95F5-4CA5-9267-EDC16219DEEA}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>CloudServer</RootNamespace>
+    <AssemblyName>Server</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>x64</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\bin\CS\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>x64</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\bin\CS\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Buffer.cs" />
+    <Compile Include="FileCache.cs" />
+    <Compile Include="JWT\Algorithms\CertificateAlgorithm.cs" />
+    <Compile Include="JWT\Algorithms\DelegateAlgorithmFactory.cs" />
+    <Compile Include="JWT\Algorithms\ECDSAAlgorithm.cs" />
+    <Compile Include="JWT\Algorithms\ECDSAAlgorithmFactory.cs" />
+    <Compile Include="JWT\Algorithms\ES256Algorithm.cs" />
+    <Compile Include="JWT\Algorithms\ES384Algorithm.cs" />
+    <Compile Include="JWT\Algorithms\ES512Algorithm.cs" />
+    <Compile Include="JWT\Algorithms\GenericAlgorithmFactory.cs" />
+    <Compile Include="JWT\Algorithms\HMACSHA256Algorithm.cs" />
+    <Compile Include="JWT\Algorithms\HMACSHA384Algorithm.cs" />
+    <Compile Include="JWT\Algorithms\HMACSHA512Algorithm.cs" />
+    <Compile Include="JWT\Algorithms\HMACSHAAlgorithm.cs" />
+    <Compile Include="JWT\Algorithms\HMACSHAAlgorithmFactory.cs" />
+    <Compile Include="JWT\Algorithms\IAlgorithmFactory.cs" />
+    <Compile Include="JWT\Algorithms\IAsymmetricAlgorithm.cs" />
+    <Compile Include="JWT\Algorithms\IJwtAlgorithm.cs" />
+    <Compile Include="JWT\Algorithms\JwtAlgorithmFactory.cs" />
+    <Compile Include="JWT\Algorithms\JwtAlgorithmName.cs" />
+    <Compile Include="JWT\Algorithms\NoneAlgorithm.cs" />
+    <Compile Include="JWT\Algorithms\RS1024Algorithm.cs" />
+    <Compile Include="JWT\Algorithms\RS2048Algorithm.cs" />
+    <Compile Include="JWT\Algorithms\RS256Algorithm.cs" />
+    <Compile Include="JWT\Algorithms\RS384Algorithm.cs" />
+    <Compile Include="JWT\Algorithms\RS4096Algorithm.cs" />
+    <Compile Include="JWT\Algorithms\RS512Algorithm.cs" />
+    <Compile Include="JWT\Algorithms\RSAlgorithm.cs" />
+    <Compile Include="JWT\Algorithms\RSAlgorithmFactory.cs" />
+    <Compile Include="JWT\Builder\ClaimName.cs" />
+    <Compile Include="JWT\Builder\EnumExtensions.cs" />
+    <Compile Include="JWT\Builder\HeaderName.cs" />
+    <Compile Include="JWT\Builder\JwtBuilder.cs" />
+    <Compile Include="JWT\Builder\JwtBuilderExtensions.cs" />
+    <Compile Include="JWT\Builder\JwtData.cs" />
+    <Compile Include="JWT\Builder\JwtHeader.cs" />
+    <Compile Include="JWT\Compatibility\String.cs" />
+    <Compile Include="JWT\Compatibility\System.Reflection\CustomAttributeExtensions.cs" />
+    <Compile Include="JWT\Compatibility\System.Security.Cryptography\HashAlgorithmName.cs" />
+    <Compile Include="JWT\Exceptions\InvalidTokenPartsException.cs" />
+    <Compile Include="JWT\Exceptions\SignatureVerificationException.cs" />
+    <Compile Include="JWT\Exceptions\TokenExpiredException.cs" />
+    <Compile Include="JWT\Exceptions\TokenNotYetValidException.cs" />
+    <Compile Include="JWT\IBase64UrlEncoder.cs" />
+    <Compile Include="JWT\IDateTimeProvider.cs" />
+    <Compile Include="JWT\IJsonSerializer.cs" />
+    <Compile Include="JWT\IJwtDecoder.cs" />
+    <Compile Include="JWT\IJwtEncoder.cs" />
+    <Compile Include="JWT\IJwtValidator.cs" />
+    <Compile Include="JWT\Internal\EncodingHelper.cs" />
+    <Compile Include="JWT\Internal\StringHelper.cs" />
+    <Compile Include="JWT\JwtBase64UrlEncoder.cs" />
+    <Compile Include="JWT\JwtDecoder.cs" />
+    <Compile Include="JWT\JwtDecoderContext.cs" />
+    <Compile Include="JWT\JwtEncoder.cs" />
+    <Compile Include="JWT\JwtParts.cs" />
+    <Compile Include="JWT\JwtValidator.cs" />
+    <Compile Include="JWT\Serializers\Converters\DictionaryStringObjectJsonConverter.cs" />
+    <Compile Include="JWT\Serializers\DefaultJsonSerializerFactory.cs" />
+    <Compile Include="JWT\Serializers\DelegateJsonSerializerFactory.cs" />
+    <Compile Include="JWT\Serializers\IJsonSerializerFactory.cs" />
+    <Compile Include="JWT\Serializers\JsonNetSerializer.cs" />
+    <Compile Include="JWT\Serializers\SystemTextSerializer.cs" />
+    <Compile Include="JWT\UnixEpoch.cs" />
+    <Compile Include="JWT\UtcDateTimeProvider.cs" />
+    <Compile Include="JWT\ValidationParameters.cs" />
+    <Compile Include="Request.cs" />
+    <Compile Include="Response.cs" />
+    <Compile Include="HttpServer.cs" />
+    <Compile Include="HttpSession.cs" />
+    <Compile Include="HttpsServer.cs" />
+    <Compile Include="HttpsSession.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+    <Compile Include="MultipartParser\BinaryStreamStack.cs" />
+    <Compile Include="MultipartParser\Constants.cs" />
+    <Compile Include="MultipartParser\Delegates.cs" />
+    <Compile Include="MultipartParser\Extensions.cs" />
+    <Compile Include="MultipartParser\FilePart.cs" />
+    <Compile Include="MultipartParser\IMultipartFormBinaryDataParser.cs" />
+    <Compile Include="MultipartParser\IMultipartFormDataParser.cs" />
+    <Compile Include="MultipartParser\IStreamingBinaryParser.cs" />
+    <Compile Include="MultipartParser\IStreamingParser.cs" />
+    <Compile Include="MultipartParser\MultipartFormBinaryDataParser.cs" />
+    <Compile Include="MultipartParser\MultipartFormDataParser.cs" />
+    <Compile Include="MultipartParser\MultipartParseException.cs" />
+    <Compile Include="MultipartParser\ParameterPart.cs" />
+    <Compile Include="MultipartParser\ParameterPartBinary.cs" />
+    <Compile Include="MultipartParser\RebufferableBinaryReader.cs" />
+    <Compile Include="MultipartParser\RFC5987.cs" />
+    <Compile Include="MultipartParser\StreamingBinaryParser.cs" />
+    <Compile Include="MultipartParser\StreamingParser.cs" />
+    <Compile Include="MultipartParser\SubsequenceFinder.cs" />
+    <Compile Include="UserManager.cs" />
+    <Compile Include="Database.cs" />
+    <Compile Include="SslContext.cs" />
+    <Compile Include="Ssl.cs" />
+    <Compile Include="SslSession.cs" />
+    <Compile Include="Tcp.cs" />
+    <Compile Include="TcpSession.cs" />
+    <Compile Include="UserOperations.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+    <None Include="packages.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <None Include="server.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.8">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.8 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Database\MyDatabase.mdf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Database\MyDatabase_log.ldf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <DependentUpon>MyDatabase.mdf</DependentUpon>
+    </Content>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

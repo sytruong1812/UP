@@ -1,0 +1,10 @@
+{
+  "port_number": 8080,
+  "host_name": "localhost",
+  "protocol": "HTTP",
+  "cert_name": "localhost",
+  "cert_store": "Root",
+  "cert_path": "E:\\DEV\\SE33\\CloudFileStorage\\certificates\\local\\client.pfx",
+  "cert_key": "qwerty",
+  "file_cache": "E:\\DEV\\SE33\\Resource\\Cloud_Storage\\file_cache.txt"
+}

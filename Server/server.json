@@ -1,0 +1,9 @@
+﻿{
+  "port_number": 8080,
+  "host_name": "localhost",
+  "protocol": "HTTP",
+  "cert_path": "E:\\DEV\\SE33\\CloudFileStorage\\certificates\\local\\client.pfx",
+  "cert_key": "qwerty",
+  "database_path": "E:\\DEV\\SE33\\CloudFileStorage\\Server\\Database\\MyDatabase.mdf",
+  "storage_path": "E:\\DEV\\SE33\\Resource\\Cloud_Storage\\server\\local_storage"
+}

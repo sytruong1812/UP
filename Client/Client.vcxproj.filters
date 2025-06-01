@@ -1,0 +1,305 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Header Files\Crypto">
+      <UniqueIdentifier>{66448fbe-d52e-447f-95d3-6dbbe9e68065}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Crypto">
+      <UniqueIdentifier>{890caedc-2897-4361-ac8a-a44fc5f2cafe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Crypto\Hash">
+      <UniqueIdentifier>{6e23ce4d-7913-4e6a-9863-4207486d8712}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Crypto\Hash">
+      <UniqueIdentifier>{20e64194-393b-4144-a581-9f13d6e59a75}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\TraceLogger">
+      <UniqueIdentifier>{467f156b-ed46-4dac-94db-b04ee3051258}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\TraceLogger">
+      <UniqueIdentifier>{ee00a4d6-7bd5-4356-a51a-50675e2da030}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Compress">
+      <UniqueIdentifier>{452659ce-bf0a-4c75-b497-037837010257}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Compress">
+      <UniqueIdentifier>{e6a266a5-031e-4ece-861d-c6fcffd338e3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Compress\zlib">
+      <UniqueIdentifier>{8bf1cf41-d9f9-4df6-989e-954162158d36}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Compress\zlib">
+      <UniqueIdentifier>{34a4a406-3fc9-49ff-ae95-29b85d477bd4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Json">
+      <UniqueIdentifier>{a411e350-8af2-487f-aed1-de60c32e8c39}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Json">
+      <UniqueIdentifier>{658cbdd1-fd44-442a-a3c6-49c59096a161}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\IO">
+      <UniqueIdentifier>{3e161ee8-896a-4015-bcf3-97c045af00ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\IO">
+      <UniqueIdentifier>{557c583d-610a-41b8-bc85-1398c1ff81bc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Compress\zstream">
+      <UniqueIdentifier>{f911e29c-fc49-4f01-8551-7b15d1855984}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="http_client.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\adler32.c">
+      <Filter>Source Files\Compress\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\compress.c">
+      <Filter>Source Files\Compress\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\crc32.c">
+      <Filter>Source Files\Compress\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\deflate.c">
+      <Filter>Source Files\Compress\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\gzclose.c">
+      <Filter>Source Files\Compress\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\gzlib.c">
+      <Filter>Source Files\Compress\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\gzread.c">
+      <Filter>Source Files\Compress\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\gzwrite.c">
+      <Filter>Source Files\Compress\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\infback.c">
+      <Filter>Source Files\Compress\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\inffast.c">
+      <Filter>Source Files\Compress\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\inflate.c">
+      <Filter>Source Files\Compress\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\inftrees.c">
+      <Filter>Source Files\Compress\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\ioapi.c">
+      <Filter>Source Files\Compress\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\ioapi_mem.c">
+      <Filter>Source Files\Compress\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\iowin32.c">
+      <Filter>Source Files\Compress\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\mztools.c">
+      <Filter>Source Files\Compress\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\trees.c">
+      <Filter>Source Files\Compress\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\uncompr.c">
+      <Filter>Source Files\Compress\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\unzip.c">
+      <Filter>Source Files\Compress\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\zip.c">
+      <Filter>Source Files\Compress\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\zutil.c">
+      <Filter>Source Files\Compress\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="aes_gcm.cpp">
+      <Filter>Source Files\Crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="file_handle.cpp">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="logger.cpp">
+      <Filter>Source Files\TraceLogger</Filter>
+    </ClCompile>
+    <ClCompile Include="json\json_parser.cpp">
+      <Filter>Source Files\Json</Filter>
+    </ClCompile>
+    <ClCompile Include="json\json_value.cpp">
+      <Filter>Source Files\Json</Filter>
+    </ClCompile>
+    <ClCompile Include="folder_handle.cpp">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="user_handle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sha256.cpp">
+      <Filter>Source Files\Crypto\Hash</Filter>
+    </ClCompile>
+    <ClCompile Include="json\json_writer.cpp">
+      <Filter>Source Files\Json</Filter>
+    </ClCompile>
+    <ClCompile Include="data_transform.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="base64.cpp">
+      <Filter>Source Files\Crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="file_cache.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="json_utility.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\zlib_vn.cpp">
+      <Filter>Source Files\Compress</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\zutil.h">
+      <Filter>Header Files\Compress\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\zlib.h">
+      <Filter>Header Files\Compress\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\zip.h">
+      <Filter>Header Files\Compress\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\zconf.h">
+      <Filter>Header Files\Compress\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\unzip.h">
+      <Filter>Header Files\Compress\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\trees.h">
+      <Filter>Header Files\Compress\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\mztools.h">
+      <Filter>Header Files\Compress\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\iowin32.h">
+      <Filter>Header Files\Compress\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\ioapi.h">
+      <Filter>Header Files\Compress\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\inftrees.h">
+      <Filter>Header Files\Compress\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\inflate.h">
+      <Filter>Header Files\Compress\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\inffixed.h">
+      <Filter>Header Files\Compress\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\inffast.h">
+      <Filter>Header Files\Compress\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\gzguts.h">
+      <Filter>Header Files\Compress\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\deflate.h">
+      <Filter>Header Files\Compress\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\crypt.h">
+      <Filter>Header Files\Compress\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\crc32.h">
+      <Filter>Header Files\Compress\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="aes_gcm.h">
+      <Filter>Header Files\Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="file_handle.h">
+      <Filter>Header Files\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="logger.h">
+      <Filter>Header Files\TraceLogger</Filter>
+    </ClInclude>
+    <ClInclude Include="file_info.h">
+      <Filter>Header Files\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="json\json_parser.h">
+      <Filter>Header Files\Json</Filter>
+    </ClInclude>
+    <ClInclude Include="json\json_value.h">
+      <Filter>Header Files\Json</Filter>
+    </ClInclude>
+    <ClInclude Include="folder_handle.h">
+      <Filter>Header Files\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="folder_info.h">
+      <Filter>Header Files\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="user_handle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sha256.h">
+      <Filter>Header Files\Crypto\Hash</Filter>
+    </ClInclude>
+    <ClInclude Include="json\json_writer.h">
+      <Filter>Header Files\Json</Filter>
+    </ClInclude>
+    <ClInclude Include="base64.h">
+      <Filter>Header Files\Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="http_client.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="data_transform.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="file_cache.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="json_utility.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\zlib_vn.h">
+      <Filter>Header Files\Compress</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\zstream\izstream.h">
+      <Filter>Header Files\Compress\zstream</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\zstream\izstream_impl.h">
+      <Filter>Header Files\Compress\zstream</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\zstream\ozstream.h">
+      <Filter>Header Files\Compress\zstream</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\zstream\ozstream_impl.h">
+      <Filter>Header Files\Compress\zstream</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\zstream\zstream_common.h">
+      <Filter>Header Files\Compress\zstream</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="client.json">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+</Project>

@@ -730,30 +730,30 @@ namespace UserOperations
 
 	BOOL UserHandle::WatchFolderSync(const std::wstring& folder_path, const std::wstring& filter, DWORD waitMilliseconds)
 	{
-		// Step 1: Get initial snapshot
-		if (!FolderHandle::GetFolderFilter(folder_path, filter, current_snapshot)) 
+		//---- Step 1: Get initial snapshot
+		if (!FolderHandle::GetFolderFilter(folder_path, filter, current_snapshot))
 		{
 			LOG_ERROR_W(L"[Snapshot] Failed to get initial folder tree for: %s", folder_path.c_str());
 			return FALSE;
 		}
 		LOG_INFO_W(L"[Snapshot] Successfully created folder tree for: %s", folder_path.c_str());
 
-		// Step 2: Prepare watch operation
+		//---- Step 2: Prepare watch operation
 		//if (!PrepareWatch(current_snapshot_)) 
 		//{
-		//	LOG_ERROR_W(L"[Watch] Failed to prepare watch operation for folder: %s", folder_path.c_str());
-		//	return FALSE;
+		//    LOG_ERROR_W(L"[Watch] Failed to prepare watch operation for folder: %s", folder_path.c_str());
+		//    return FALSE;
 		//}
 
-		// Step 3: Create directory change notification handle
-		HANDLE hDirectory = CreateFileW(folder_path.c_str(), 
-										FILE_LIST_DIRECTORY,
-										FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-										NULL,
-										OPEN_EXISTING,
-										FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED,
-										NULL);
-		if (hDirectory == INVALID_HANDLE_VALUE) 
+		//---- Step 3: Create directory change notification handle
+		HANDLE hDirectory = CreateFileW(folder_path.c_str(),
+			FILE_LIST_DIRECTORY,
+			FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+			NULL,
+			OPEN_EXISTING,
+			FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED,
+			NULL);
+		if (hDirectory == INVALID_HANDLE_VALUE)
 		{
 			LOG_ERROR_W(L"[System] Failed to create directory handle. Error code: %d", GetLastError());
 			return FALSE;
@@ -762,7 +762,7 @@ namespace UserOperations
 		// Set up overlapped structure
 		OVERLAPPED overlapped = { 0 };
 		overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-		if (!overlapped.hEvent) 
+		if (!overlapped.hEvent)
 		{
 			LOG_ERROR_W(L"[System] Failed to create event handle. Error code: %d", GetLastError());
 			CloseHandle(hDirectory);
@@ -774,8 +774,9 @@ namespace UserOperations
 		DWORD bytesReturned = 0;
 
 		// Create keyboard monitor thread
+		exitMonitorFlag = FALSE; // Ensure flag is reset
 		HANDLE hKeyboard = CreateThread(NULL, 0, MonitorKeyboardInput, NULL, 0, NULL);
-		if (!hKeyboard) 
+		if (!hKeyboard)
 		{
 			LOG_ERROR_W(L"[System] Failed to create keyboard monitor thread. Error code: %d", GetLastError());
 			CloseHandle(overlapped.hEvent);
@@ -787,81 +788,84 @@ namespace UserOperations
 		LOG_INFO_W(L"[Watch] Press 'Q' to exit monitoring");
 
 		ActionList actions;	// List action
-		HANDLE handles[2] = { hKeyboard, overlapped.hEvent}; // Array of handles to wait on
+		HANDLE handles[2] = { hKeyboard, overlapped.hEvent }; // Array of handles to wait on
 
-		while (!exitMonitorFlag) 
+		while (!exitMonitorFlag)
 		{
-			// Start watch
+			// Always reset event before issuing next overlapped I/O
+			ResetEvent(overlapped.hEvent);
+
 			BOOL success = ReadDirectoryChangesW(hDirectory,
-												 buffer, sizeof(buffer), TRUE,
-												 FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_LAST_WRITE,
-												 &bytesReturned, &overlapped, NULL);
+				buffer, sizeof(buffer), TRUE,
+				FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_LAST_WRITE,
+				&bytesReturned, &overlapped, NULL);
 			if (!success) {
 				LOG_ERROR_W(L"[System] ReadDirectoryChangesW failed. Error code: %d", GetLastError());
 				break;
 			}
+
 			// Wait for either directory change or keyboard input
 			DWORD dwWaitStatus = WaitForMultipleObjects(_countof(handles), handles, FALSE, waitMilliseconds);
 			switch (dwWaitStatus)
 			{
-				case WAIT_OBJECT_0: // Keyboard thread completed
+			case WAIT_OBJECT_0: // Keyboard thread completed
+			{
+				LOG_INFO_W(L"[Watch] Received exit signal from keyboard");
+				exitMonitorFlag = true;
+				break;
+			}
+			case WAIT_OBJECT_0 + 1:     // Directory change event
+			{
+				BOOL isFileChange = TRUE;
+				DWORD dwByteTransferred = 0;
+				if (GetOverlappedResult(hDirectory, &overlapped, &dwByteTransferred, FALSE) && dwByteTransferred > 0)
 				{
-					LOG_INFO_W(L"[Watch] Received exit signal from keyboard");
-					exitMonitorFlag = true;
-					break;
+					FILE_NOTIFY_INFORMATION* pNotify = (FILE_NOTIFY_INFORMATION*)buffer;
+					std::wstring subject(pNotify->FileName, pNotify->FileNameLength / sizeof(WCHAR));
+					std::wstring full_path = folder_path + L"\\" + subject;
+					// Determine if this is a file or folder change
+					isFileChange = Helper::PathHelper::isValidFilePath(full_path);
 				}
-				case WAIT_OBJECT_0 + 1:     // Directory change event
+				// Changes detected, get a new snapshot and compare
+				FolderInfo new_snapshot;
+				if (!FolderHandle::GetFolderFilter(folder_path, filter, new_snapshot))
 				{
-					BOOL isFileChange = TRUE;
-					DWORD dwByteTransferred = 0;
-					if (GetOverlappedResult(hDirectory, &overlapped, &dwByteTransferred, FALSE) && dwByteTransferred > 0)
+					LOG_ERROR_W(L"[Snapshot] Failed to get updated folder tree!");
+				}
+				else
+				{
+					std::lock_guard<std::mutex> lock(snapshot_mutex);
+					//Detected changes saving to the action list
+					if (isFileChange)
 					{
-						FILE_NOTIFY_INFORMATION* pNotify = (FILE_NOTIFY_INFORMATION*)buffer;
-						std::wstring subject(pNotify->FileName, pNotify->FileNameLength / sizeof(WCHAR));
-						std::wstring full_path = folder_path + L"\\" + subject;
-						isFileChange = Helper::PathHelper::isValidFilePath(full_path);
-					}
-					// Changes detected, get a new snapshot and compare
-					FolderInfo new_snapshot;
-					if (!FolderHandle::GetFolderFilter(folder_path, filter, new_snapshot))
-					{
-						LOG_ERROR_W(L"[Snapshot] Failed to get updated folder tree!");
+						LOG_INFO_W(L"[Detect] Change for file... ");
+						DetectChangeForFile(current_snapshot, new_snapshot, actions);
 					}
 					else
 					{
-						std::lock_guard<std::mutex> lock(snapshot_mutex);
-						//Detected changes saving to the action list
-						if (isFileChange)
-						{
-							LOG_INFO_W(L"[Detect] Change for file... ");
-							DetectChangeForFile(current_snapshot, new_snapshot, actions);
-						}
-						else
-						{
-							LOG_INFO_W(L"[Detect] Change for folder... ");
-							DetectChangeForFolder(current_snapshot, new_snapshot, actions);
-						}
-						current_snapshot = std::move(new_snapshot);
+						LOG_INFO_W(L"[Detect] Change for folder... ");
+						DetectChangeForFolder(current_snapshot, new_snapshot, actions);
 					}
-					break;
+					current_snapshot = std::move(new_snapshot);
 				}
-				case WAIT_TIMEOUT:	// Timeout occurred, continue monitoring
+				break;
+			}
+			case WAIT_TIMEOUT:	// Timeout occurred, continue monitoring
+			{
+				LOG_INFO_W(L"[Watch] Timeout - processing accumulated changes");
+				if (!ProcessSync(actions))
 				{
-					LOG_INFO_W(L"[Watch] Timeout - processing accumulated changes");
-
-					if (!ProcessSync(actions))
-					{
-						LOG_ERROR_W(L"[Syncing] Failed to sync folder!");
-					}
-					actions.clear();
-					break;
+					LOG_ERROR_W(L"[Syncing] Failed to sync folder!");
 				}
-				default:
-				{
-					LOG_ERROR_W(L"Wait failed with error %d", GetLastError());
-					exitMonitorFlag = true;
-					break;
-				}
+				actions.clear();
+				break;
+			}
+			default:
+			{
+				LOG_ERROR_W(L"Wait failed with error %d", GetLastError());
+				exitMonitorFlag = true;
+				break;
+			}
 			}
 		}
 
@@ -898,31 +902,28 @@ namespace UserOperations
 						FILETIME newFileTime = new_file.GetLastWriteTime();
 						FILETIME oldFileTime = old_file.GetLastWriteTime();
 
-						if (CompareFileTime(&newFileTime, &oldFileTime) == 0 
-							&& new_file.GetFileSize() == old_file.GetFileSize() 
+						if (CompareFileTime(&newFileTime, &oldFileTime) == 0
+							&& new_file.GetFileSize() == old_file.GetFileSize()
 							&& new_file.GetHashFile() == old_file.GetHashFile()
 							&& new_file.GetFileName() != old_file.GetFileName()
 							&& new_file.GetFilePath() != old_file.GetFilePath())
 						{
 							// Found renamed file
-							actions.push_back( { ACTION_RENAME, new FileInfo(old_file), new FileInfo(new_file) } );
-
+							actions.push_back({ ACTION_RENAME, new FileInfo(old_file), new FileInfo(new_file) });
 							LOG_INFO_W(L"[FILE][RENAME] %s -> %s", old_file.GetFilePath().c_str(), new_file.GetFilePath().c_str());
 							isRenamed = TRUE;
 							break;
 						}
 					}
 					// 1.2: If not renamed, then it was deleted
-					if (!isRenamed) 
+					if (!isRenamed)
 					{
-						actions.push_back ( { ACTION_REMOVE,  new FileInfo(old_file), NULL } );
-
+						actions.push_back({ ACTION_REMOVE,  new FileInfo(old_file), NULL });
 						LOG_INFO_W(L"[FILE][REMOVE] %s", old_file.GetFilePath().c_str());
 					}
 				}
 			}
 		}
-		
 
 		// Step 2: Check for ADD NEW or MODIFIED files - Compare new snapshot with old snapshot
 		for (const auto& new_file : new_files)
@@ -932,8 +933,8 @@ namespace UserOperations
 			for (const auto& action : actions)
 			{
 				if (action.is_folder_ == FALSE
-					&& action.type_ == ACTION_RENAME 
-					&& action.object_new_.file_new_->GetFilePath() == new_file.GetFilePath()) 
+					&& action.type_ == ACTION_RENAME
+					&& action.object_new_.file_new_->GetFilePath() == new_file.GetFilePath())
 				{
 					skip = TRUE;
 					break;
@@ -947,20 +948,22 @@ namespace UserOperations
 			FileInfo old_file = old_snapshot.FindFileRecursive(new_file.GetFilePath());
 			if (old_file == FileInfo())
 			{
-				actions.push_back ( { ACTION_ADD, new FileInfo(new_file),  NULL } );
+				actions.push_back({ ACTION_ADD, new FileInfo(new_file),  NULL });
 				LOG_INFO_W(L"[FILE][ADD] %s", new_file.GetFilePath().c_str());
 			}
-			else 
+			else
 			{
 				FILETIME newFileTime = new_file.GetLastWriteTime();
 				FILETIME oldFileTime = old_file.GetLastWriteTime();
-				// Check for file modifications by comparing size and hash file
-				if (CompareFileTime(&newFileTime, &oldFileTime) != 0 
-					&& new_file.GetFileSize() != old_file.GetFileSize() 
-					//&& new_file.GetHashFile() != old_file.GetHashFile() 
-					&& new_file.GetFilePath() == old_file.GetFilePath())
+				// Check for file modifications by comparing time, size, or hash (any difference = MODIFIED)
+				if (
+					(CompareFileTime(&newFileTime, &oldFileTime) != 0 ||
+						new_file.GetFileSize() != old_file.GetFileSize() ||
+						new_file.GetHashFile() != old_file.GetHashFile())
+					&& new_file.GetFilePath() == old_file.GetFilePath()
+					)
 				{
-					actions.push_back ( { ACTION_MODIFIED, new FileInfo(new_file), NULL } );
+					actions.push_back({ ACTION_MODIFIED, new FileInfo(new_file), NULL });
 					LOG_INFO_W(L"[FILE][MODIFIED] %s", new_file.GetFilePath().c_str());
 				}
 			}

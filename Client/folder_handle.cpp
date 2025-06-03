@@ -17,23 +17,6 @@ namespace ResourceOperations
 		return ErrorMessageFolder[last_error];
 	}
 
-	BOOL FolderHandle::IsFileEmpty(const std::wstring& filename)
-	{
-		std::ifstream file(filename);
-		return file.peek() == std::ifstream::traits_type::eof();
-	}
-
-	BOOL FolderHandle::IsPathExists(const std::wstring& path)
-	{
-		return GetFileAttributesW(path.c_str()) != INVALID_FILE_ATTRIBUTES;
-	}
-
-	BOOL FolderHandle::IsFolderExists(const std::wstring& path)
-	{
-		DWORD attributes = GetFileAttributesW(path.c_str());
-		return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY);
-	}
-
 	BOOL FolderHandle::CreateFolder(const std::wstring& path, const std::wstring& name)
 	{
 		std::wstring folder_path = path + L"\\" + name;
@@ -81,12 +64,22 @@ namespace ResourceOperations
 		{
 			return FALSE;
 		}
-		DWORD folder_size = 0;
+		HANDLE hFind = NULL;
+		ULONGLONG totalSize = 0;
 		folder.SetFolderPath(path);
 		folder.SetFolderName(Helper::PathHelper::extractLastComponentFromPath(path));
 
+		WIN32_FILE_ATTRIBUTE_DATA attr_data;
+		if (!GetFileAttributesExW(path.c_str(), GetFileExInfoStandard, &attr_data))
+		{
+			last_error = ERROR_GET_FOLDER_ATTRIBUTE;
+			return FALSE;
+		}
+		folder.SetChangeTime(attr_data.ftLastWriteTime);
+		folder.SetAccessTime(attr_data.ftLastAccessTime);
+
 		WIN32_FIND_DATAW ffd;
-		HANDLE hFind = FindFirstFileW((path + L"\\*").c_str(), &ffd);
+		hFind = FindFirstFileW((path + L"\\*").c_str(), &ffd);
 		if (hFind == INVALID_HANDLE_VALUE)
 		{
 			return FALSE;
@@ -102,12 +95,21 @@ namespace ResourceOperations
 				FolderInfo children;
 				children.SetRoot(FALSE);
 				std::wstring folder_path = path + L"\\" + ffd.cFileName;
+				WIN32_FILE_ATTRIBUTE_DATA attr_data;
+				if (!GetFileAttributesExW(folder_path.c_str(), GetFileExInfoStandard, &attr_data))
+				{
+					last_error = ERROR_GET_FOLDER_ATTRIBUTE;
+					FindClose(hFind);
+					return FALSE;
+				}
+				children.SetChangeTime(attr_data.ftLastWriteTime);
+				children.SetAccessTime(attr_data.ftLastAccessTime);
 
 				if (GetFolderInfo(folder_path, children))
 				{
 					folder.AddChildren(children);
+					totalSize += children.GetFolderSize();
 				}
-				folder_size += children.GetFolderSize();
 			}
 			else
 			{
@@ -116,16 +118,20 @@ namespace ResourceOperations
 				if (!FileHandle::GetFileInfo(file_path, file))
 				{
 					FindClose(hFind);
+					last_error = ERROR_GET_FILE_INFO;
 					return FALSE;
 				}
-				folder_size += file.GetFileSize();
+				totalSize += file.GetFileSize();
 				file.SetParentFolder(&folder);
 				folder.AddFile(file);
 			}
 		} while (FindNextFileW(hFind, &ffd) != 0);
 
-		folder.SetFolderSize(folder_size);
-		FindClose(hFind);
+		folder.SetFolderSize((DWORD)totalSize);
+		if (hFind)
+		{
+			FindClose(hFind);
+		}
 		return TRUE;
 	}
 
@@ -135,12 +141,22 @@ namespace ResourceOperations
 		{
 			return FALSE;
 		}
-		DWORD folder_size = 0;
+		HANDLE hFind = NULL;
+		ULONGLONG totalSize = 0;
 		folder.SetFolderPath(path);
 		folder.SetFolderName(Helper::PathHelper::extractLastComponentFromPath(path));
 
+		WIN32_FILE_ATTRIBUTE_DATA attr_data;
+		if (!GetFileAttributesExW(path.c_str(), GetFileExInfoStandard, &attr_data))
+		{
+			last_error = ERROR_GET_FOLDER_ATTRIBUTE;
+			return FALSE;
+		}
+		folder.SetChangeTime(attr_data.ftLastWriteTime);
+		folder.SetAccessTime(attr_data.ftLastAccessTime);
+
 		WIN32_FIND_DATAW ffd;
-		HANDLE hFind = FindFirstFileExW((path + L"\\" + filter).c_str(), FindExInfoStandard, &ffd, FindExSearchNameMatch, NULL, 0);
+		hFind = FindFirstFileExW((path + L"\\" + filter).c_str(), FindExInfoStandard, &ffd, FindExSearchNameMatch, NULL, 0);
 		if (hFind == INVALID_HANDLE_VALUE)
 		{
 			return FALSE;
@@ -156,12 +172,21 @@ namespace ResourceOperations
 				FolderInfo children;
 				children.SetRoot(FALSE);
 				std::wstring folder_path = path + L"\\" + ffd.cFileName;
-
-				if (GetFolderInfo(folder_path, children))
+				WIN32_FILE_ATTRIBUTE_DATA attr_data;
+				if (!GetFileAttributesExW(folder_path.c_str(), GetFileExInfoStandard, &attr_data))
+				{
+					last_error = ERROR_GET_FOLDER_ATTRIBUTE;
+					FindClose(hFind);
+					return FALSE;
+				}
+				children.SetChangeTime(attr_data.ftLastWriteTime);
+				children.SetAccessTime(attr_data.ftLastAccessTime);
+	
+				if (GetFolderFilter(folder_path, filter, children))
 				{
 					folder.AddChildren(children);
+					totalSize += children.GetFolderSize();
 				}
-				folder_size += children.GetFolderSize();
 			}
 			else
 			{
@@ -170,17 +195,21 @@ namespace ResourceOperations
 				if (!FileHandle::GetFileInfo(file_path, file))
 				{
 					FindClose(hFind);
+					last_error = ERROR_GET_FILE_INFO;
 					return FALSE;
 				}
-				folder_size += file.GetFileSize();
+				totalSize += file.GetFileSize();
 				file.SetParentFolder(&folder);
 				folder.AddFile(file);
 			}
-			folder.SetFolderSize(folder_size);
 
 		} while (FindNextFileW(hFind, &ffd) != 0);
 
-		FindClose(hFind);
+		folder.SetFolderSize((DWORD)totalSize);
+		if (hFind)
+		{
+			FindClose(hFind);
+		}
 		return TRUE;
 	}
 }

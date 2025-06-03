@@ -32,22 +32,24 @@ namespace ResourceOperations
 
 		//TODO: Update hash file	
 		BYTE digest[SHA256_DIGEST_LENGTH];
-		//BYTE* buffer = NULL;
-		//DWORD buffer_size = 0;
-		//if (!ReadFileData(path, buffer, buffer_size))
-		//{
-		//	return FALSE;
-		//}
+		DWORD buffer_size = 0;
+		BYTE* buffer = NULL;
+		if (!ReadFileData(path, buffer, buffer_size))
+		{
+			last_error = ERROR_READ_FILE;
+			return FALSE;
+		}
 		//LOG_INFO_W(L"Hashing file %s", path.c_str());
-		//if (!Crypto::SHA256_Hash(buffer, buffer_size, digest))
-		//{
-		//	return FALSE;
-		//}
+		if (!Crypto::SHA256_Hash(buffer, buffer_size, digest))
+		{
+			last_error = ERROR_HASH_FILE_DATA;
+			return FALSE;
+		}
 		//LOG_INFO_W(L"Hashing done!");
-		//if (buffer)
-		//{
-		//	delete[] buffer;
-		//}
+		if (buffer)
+		{
+			delete[] buffer;
+		}
 		info = FileInfo(path, 
 						(DWORD)file_size.QuadPart, 
 						std::string(reinterpret_cast<char*>(digest), sizeof(digest)),

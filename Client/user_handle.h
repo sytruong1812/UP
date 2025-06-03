@@ -1,11 +1,12 @@
 #pragma once
-#include <thread> 
+#include <mutex>
+#include <string>
 #include "logger.h"
 #include "file_cache.h"
 #include "http_client.h"
 #include "json_utility.h"
 #include "folder_handle.h"
-#include <mutex>
+
 
 using namespace NetworkOperations;
 using namespace ResourceOperations;
@@ -14,17 +15,42 @@ namespace UserOperations
 {
     enum SyncActionType
     {
-        ACTION_UPLOAD,
-        ACTION_DELETE,
-        ACTION_UPDATE,
-        ACTION_RENAME
+        ACTION_ADD,
+        ACTION_RENAME,
+        ACTION_REMOVE,
+        ACTION_MODIFIED
     };
+
     struct SyncAction
     {
-        SyncActionType type;
-        BOOL is_file_path;
-        std::wstring path;
-        std::wstring new_path; // optional for rename
+        SyncActionType type_;
+        BOOL is_folder_;
+        union 
+        {
+            FileInfo* file_old_;
+            FolderInfo* folder_old_;
+        } object_old_;
+        union 
+        {
+            FileInfo* file_new_;
+            FolderInfo* folder_new_;
+        } object_new_;
+
+        SyncAction(SyncActionType type, FileInfo* file_old, FileInfo* file_new ) 
+        {
+            type_ = type;
+            is_folder_ = FALSE;
+            object_old_.file_old_ = file_old;
+            object_new_.file_new_ = file_new;
+        }
+
+        SyncAction(SyncActionType type, FolderInfo* folder_old, FolderInfo* folder_new) 
+        {
+            type_ = type;
+            is_folder_ = TRUE;
+            object_old_.folder_old_ = folder_old;
+            object_new_.folder_new_ = folder_new;
+        }
     };
     typedef std::vector<SyncAction> ActionList;
 
@@ -37,8 +63,8 @@ namespace UserOperations
         HttpClient* net_api;
         FileCache* cache_api;
 
-        FolderInfo current_snapshot_;
-        std::mutex snapshot_mutex_;
+        std::mutex snapshot_mutex;
+        FolderInfo current_snapshot;
 
     public:
         UserHandle() : net_api(NULL), cache_api(NULL) {}
@@ -54,38 +80,39 @@ namespace UserOperations
         BOOL ChangePassword(const std::wstring& old_password, const std::wstring& new_password);
 
         BOOL RemoveFile(const std::wstring& file_path);
-        BOOL RenameFile(const std::wstring& file_path, std::wstring& new_file_name);
+        BOOL RenameFile(const std::wstring& file_path, const std::wstring& new_name);
         BOOL UploadFile(const FileInfo& file);
         BOOL UpdateFile(const FileInfo& file);
 
         BOOL RemoveFolder(const std::wstring& folder_path);
-        BOOL RenameFolder(const std::wstring& folder_path, std::wstring& new_folder_name);
+        BOOL RenameFolder(const std::wstring& folder_path, const std::wstring& new_name);
         BOOL UploadFolder(const FolderInfo& folder);
         BOOL UpdateFolder(const FolderInfo& folder);
         BOOL UploadFolderWithFilter(const std::wstring& folder_path, const std::wstring& filter);
         BOOL UpdateFolderWithFilter(const std::wstring& folder_path, const std::wstring& filter);
 
-        BOOL WatchFolderSync(const std::wstring& folder_path, const std::wstring& filter = L"*.*", DWORD wait = INFINITE);
-
+        BOOL WatchFolderSync(const std::wstring& folder_path, const std::wstring& filter = L"*.*", DWORD waitMilliseconds = 5000);
+ 
     private:
         HttpResponse UploadFileMultipart(const FileInfo& file, const std::string& upload_id);
         HttpResponse UpdateFileMultipart(const FileInfo& file, const std::string& upload_id);
         
         //---- NEW ------
         BOOL PrepareWatch(FolderInfo& folder);
-		void DetectAndProcessChanges(const FolderInfo& old_snapshot, const FolderInfo& new_snapshot);
-        BOOL ProcessSync(ActionList actions, FolderInfo& folder);
+		void DetectChangeForFile(const FolderInfo& old_snapshot, const FolderInfo& new_snapshot, ActionList& actions);
+        void DetectChangeForFolder(const FolderInfo& old_snapshot, const FolderInfo& new_snapshot, ActionList& actions);
+        BOOL ProcessSync(const ActionList& actions);
         //---- NEW ------
 
-        BOOL ProcessFileAdd(FolderInfo& folder, std::wstring wSubName);
-        BOOL ProcessFileModified(FolderInfo& folder, std::wstring wSubName);
-        BOOL ProcessFileRemove(FolderInfo& folder, std::wstring wSubName);
-        BOOL ProcessFileRename(FolderInfo& folder, std::wstring wSubName, std::wstring& wLastSubName);
+        BOOL ProcessFileAdd(const FileInfo& file);
+        BOOL ProcessFileModified(const FileInfo& file);
+        BOOL ProcessFileRemove(const FileInfo& file);
+        BOOL ProcessFileRename(const FileInfo& old_file, const FileInfo& new_file);
 
-        BOOL ProcessFolderAdd(FolderInfo& folder, std::wstring wSubName);
-        BOOL ProcessFolderModified(FolderInfo& folder, std::wstring wSubName);
-        BOOL ProcessFolderRemove(FolderInfo& folder, std::wstring wSubName);
-        BOOL ProcessFolderRename(FolderInfo& folder, std::wstring wSubName, std::wstring& wLastSubName);
+        BOOL ProcessFolderAdd(const FolderInfo& folder);
+        BOOL ProcessFolderModified(const FolderInfo& folder);
+        BOOL ProcessFolderRemove(const FolderInfo& folder);
+        BOOL ProcessFolderRename(const FolderInfo& old_folder, const FolderInfo& new_folder);
 
     };
 }

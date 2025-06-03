@@ -54,76 +54,14 @@ void cmd_user_remove_file(std::unique_ptr<UserHandle>& handler);
 void cmd_user_rename_file(std::unique_ptr<UserHandle>& handler);
 void cmd_user_watch_folder(std::unique_ptr<UserHandle>& handler);
 
+
 void TEST()
 {
-	FolderInfo folder;
-	std::wstring folder_path = L"E:\\DEV\\SE33\\Resource\\Cloud_Storage\\folder_sync";
-	FolderHandle::GetFolderInfo(folder_path, folder);
-
-	auto list = folder.GetFilesRecursive();
-	std::string json = JsonUtility::CreateJsonFolderTree(folder);
-
-	FolderHandle::GetFolderFilter(folder_path, L".bin", folder);
-	folder.CountFile();
-
-	for (int i = 0; i < folder.CountChildren(); i++)
-	{
-		FolderInfo children = folder.GetChildren(i);
-		children.SetFolderName(L"abc");
-		for (int j = 0; j < children.CountFile(); j++)
-		{
-			FileInfo file = children.GetFile(j);
-			file.SetFileName(L"xyz");
-		}
-	}
-}
-
-void TEST_1()
-{
 	UserHandle handler;
-	std::wstring folder_path = L"D:\\DEV\\SE31\\Resource\\folder";
-
-	//handler.MonitorFolder(folder_path);
-
-	handler.WatchFolderSync(folder_path, L"*");
-}
-
-void TEST_2() 
-{
-	std::string input = "Hello world \n";
-	std::ostringstream buffer;
-	{
-		zstream::ozstream zipper(buffer);
-		zipper << input;
-	}
-	std::string buffer_compress = buffer.str();
-
-	std::istringstream ibuffer(buffer_compress);
-	zstream::izstream izstream(ibuffer);
-	izstream.unsetf(std::ios_base::skipws);
-
-	std::string output = std::string((std::istream_iterator<char>(izstream)), std::istream_iterator<char>());
-
-	if (output != input)
-	{
-		std::cout << "Compare failed" << std::endl;
-		return;
-	}
-	else
-	{
-		std::cout << "Compare succeeded" << std::endl;
-		return;
-	}
-}
-
-void TEST_3() 
-{
-	FolderInfo folder;
 	std::wstring folder_path = L"E:\\DEV\\SE33\\Resource\\Cloud_Storage\\folder_sync";
-	FolderHandle::GetFolderInfo(folder_path, folder);
-	std::string tree = JsonUtility::CreateJsonFolderTree(folder);
-	std::cout << tree << std::endl;
+	handler.WatchFolderSync(folder_path);
 }
+
 
 int wmain(int argc, wchar_t* argv[])
 {
@@ -131,10 +69,7 @@ int wmain(int argc, wchar_t* argv[])
 	SET_LOG_OUT(SHOW_MESSAGE);
 	SET_LOG_LEVEL(SUCCS_LEVEL);
 	
-	//TEST();
-	TEST_1();
-	//TEST_2();
-	//TEST_3();
+	TEST();
 
 	//std::unique_ptr<UserHandle> handler = std::make_unique<UserHandle>();
 	//std::unique_ptr<HttpClient> net = std::make_unique<HttpClient>();

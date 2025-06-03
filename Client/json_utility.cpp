@@ -110,7 +110,7 @@ namespace UserOperations
 		jw->StartObject();
 			jw->KeyValue("file_name", Helper::StringHelper::convertWideStringToString(file.GetFileName()));
 			jw->KeyValue("file_size", (uint64_t)file.GetFileSize());
-			jw->KeyValue("folder", Helper::StringHelper::convertWideStringToString(file.GetParentFolder()->GetPathToRoot()));
+			jw->KeyValue("folder", Helper::StringHelper::convertWideStringToString(file.GetParentFolder()->GetRelativePath()));
 			jw->KeyValue("attribute", (uint64_t)file.GetFileAttribute());
 			jw->KeyValue("create_time", Helper::TimeHelper::convertFileTimeToString(file.GetCreateTime()));
 			jw->KeyValue("last_write_time", Helper::TimeHelper::convertFileTimeToString(file.GetLastWriteTime()));
@@ -128,7 +128,7 @@ namespace UserOperations
 			jw->KeyValue("file_id", (int32_t)file_id);
 			jw->KeyValue("file_name", Helper::StringHelper::convertWideStringToString(file.GetFileName()));
 			jw->KeyValue("file_size", (uint64_t)file.GetFileSize());
-			jw->KeyValue("folder", Helper::StringHelper::convertWideStringToString(file.GetParentFolder()->GetPathToRoot()));
+			jw->KeyValue("folder", Helper::StringHelper::convertWideStringToString(file.GetParentFolder()->GetRelativePath()));
 			jw->KeyValue("attribute", (uint64_t)file.GetFileAttribute());
 			jw->KeyValue("create_time", Helper::TimeHelper::convertFileTimeToString(file.GetCreateTime()));
 			jw->KeyValue("last_write_time", Helper::TimeHelper::convertFileTimeToString(file.GetLastWriteTime()));
@@ -141,7 +141,7 @@ namespace UserOperations
 	{
 		std::ostringstream os;
 		JsonWriter* jw = new JsonWriter();
-		LIST_FILE files = folder.GetFilesRecursive();
+		ResourceOperations::LIST_FILE files = folder.GetFilesRecursive();
 
 		jw->SetWriter(&os);
 		jw->StartArray();
@@ -150,7 +150,7 @@ namespace UserOperations
 			jw->StartObject();
 			jw->KeyValue("file_name", Helper::StringHelper::convertWideStringToString(files[i].GetFileName()));
 			jw->KeyValue("file_size", (uint64_t)files[i].GetFileSize());
-			jw->KeyValue("folder", Helper::StringHelper::convertWideStringToString(files[i].GetParentFolder()->GetPathToRoot()));
+			jw->KeyValue("folder", Helper::StringHelper::convertWideStringToString(files[i].GetParentFolder()->GetRelativePath()));
 			jw->KeyValue("attribute", (uint64_t)files[i].GetFileAttribute());
 			jw->KeyValue("create_time", Helper::TimeHelper::convertFileTimeToString(files[i].GetCreateTime()));
 			jw->KeyValue("last_write_time", Helper::TimeHelper::convertFileTimeToString(files[i].GetLastWriteTime()));

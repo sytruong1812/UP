@@ -1,11 +1,17 @@
 #pragma once
 #include "utils.h"
 
-namespace ResourceOperations
-{
+namespace ResourceOperations {
+    // Define type aliases for folder list
     class FolderInfo;
-    class FileInfo
-    {
+    typedef std::vector<FolderInfo> LIST_FOLDER;
+    typedef std::vector<FolderInfo>::iterator PLIST_FOLDER;
+    // Define type aliases for file list
+    class FileInfo;
+    typedef std::vector<FileInfo> LIST_FILE;
+    typedef std::vector<FileInfo>::iterator PLIST_FILE;
+
+    class FileInfo {
     public:
         // Default constructor
         FileInfo() : file_size_(0), file_attribute_(0), create_time_({}), last_write_time_({}), last_access_time_({})
@@ -16,7 +22,7 @@ namespace ResourceOperations
         // Constructor with parameters
         FileInfo(const std::wstring& file_path, DWORD file_size, const std::string& hash, DWORD file_attribute,
             FILETIME create_time, FILETIME last_write_time, FILETIME last_access_time)
-            : 
+            :
             file_path_(file_path), file_size_(file_size), hash_file_(hash), file_attribute_(file_attribute),
             create_time_(create_time), last_write_time_(last_write_time), last_access_time_(last_access_time)
         {
@@ -33,7 +39,7 @@ namespace ResourceOperations
 
         // Copy constructor
         FileInfo(const FileInfo& other)
-            : 
+            :
             file_path_(other.file_path_),
             file_name_(other.file_name_),
             file_size_(other.file_size_),
@@ -67,7 +73,7 @@ namespace ResourceOperations
 
         // Move constructor
         FileInfo(FileInfo&& other) noexcept
-            : 
+            :
             file_path_(std::move(other.file_path_)),
             file_name_(std::move(other.file_name_)),
             file_size_(other.file_size_),
@@ -150,15 +156,11 @@ namespace ResourceOperations
         std::wstring extension_;        // File extension (e.g. .txt, .exe)
         FolderInfo* parent_folder_;     // Pointer to parent folder contain file
         DWORD file_attribute_;          // File attributes (e.g. readonly, hidden)
-        std::string hash_file_;        // File hash
+        std::string hash_file_;         // File hash
         FILETIME create_time_;          // File creation time
         FILETIME last_write_time_;      // Last write time
         FILETIME last_access_time_;     // Last access time
         std::wstring file_path_;        // Full path to the file
     };
-
-    // Define type aliases for file list
-    typedef std::vector<FileInfo> LIST_FILE;
-    typedef std::vector<FileInfo>::iterator PLIST_FILE;
 
 } // namespace ResourceOperations

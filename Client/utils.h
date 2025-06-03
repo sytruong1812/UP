@@ -37,10 +37,14 @@ namespace Helper
         static BOOL isFile(const std::wstring& path);
         static BOOL isFolder(const std::wstring& path);
         static BOOL isValidFilePath(const std::wstring& path);
-        static std::wstring extractFolderFromFilePath(const std::wstring& path);
+        static BOOL isSubPath(const std::wstring& parent, const std::wstring& child);
+        static BOOL isSubFolder(const std::wstring& parentPath, const std::wstring& childPath);
+        static BOOL isParentFolder(const std::wstring& parentPath, const std::wstring& childPath);
+        static DWORD getPathLevel(const std::wstring& path);
         static std::wstring extractFileNameFromFilePath(const std::wstring& path);
-        static std::wstring extractFolderNameFromFilePath(const std::wstring& path);
         static std::wstring extractFileExtensionFromFilePath(const std::wstring& path);
+        static std::wstring extractParentNameFromPath(const std::wstring& path);
+        static std::wstring extractParentPathFromPath(const std::wstring& path);
         static std::wstring extractLastComponentFromPath(const std::wstring& path);
         static std::wstring removeLastComponentFromPath(const std::wstring& path);
         static std::wstring getPathFromEnvironmentVariable(const std::wstring& env);

@@ -21,6 +21,7 @@ namespace ResourceOperations
 		ERROR_SET_FILE_TIME,
 		ERROR_GET_FILE_ATTRIBUTE,
 		ERROR_SET_FILE_ATTRIBUTE,
+		ERROR_HASH_FILE_DATA,
 	};
 
 	const std::string ErrorMessageFile[] =
@@ -40,6 +41,7 @@ namespace ResourceOperations
 		"Failed to set file time!",
 		"Failed to get file attribute!",
 		"Failed to set file attribute!",
+		"Failed to hash file data!",
 	};
 
 	class FileHandle 

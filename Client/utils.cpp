@@ -272,7 +272,37 @@ namespace Helper
         return (dotPosition != std::wstring::npos) && (dotPosition > slashPosition);
     }
 
-    std::wstring PathHelper::extractFolderFromFilePath(const std::wstring& path)
+    BOOL PathHelper::isSubPath(const std::wstring& parent, const std::wstring& child)
+    {
+        return child.length() > parent.length() && child.compare(0, parent.length(), parent) == 0;
+    }
+
+    // Check if childPath is a subfolder of parentPath
+    BOOL PathHelper::isSubFolder(const std::wstring& parentPath, const std::wstring& childPath)
+    {
+        return childPath.find(parentPath) == 0 && childPath != parentPath;
+    }
+
+    // Check if parentPath is the parent of childPath
+    BOOL PathHelper::isParentFolder(const std::wstring& parentPath, const std::wstring& childPath)
+    {
+        return isSubFolder(parentPath, childPath);
+    }
+
+    DWORD PathHelper::getPathLevel(const std::wstring& path)
+    {
+        DWORD n = 0;
+        size_t pos = 0;
+        do {
+            pos = path.find(L'\\', pos);
+            if (pos++ > 0) {
+                n++;
+            }
+        } while (pos > 0);
+        return n;
+    }
+
+    std::wstring PathHelper::extractParentPathFromPath(const std::wstring& path)
     {
         size_t lastSlashPos = path.find_last_of(L"/\\");
         if (lastSlashPos != std::wstring::npos && lastSlashPos > 1)
@@ -293,7 +323,7 @@ namespace Helper
         return file_name;
     }
 
-    std::wstring PathHelper::extractFolderNameFromFilePath(const std::wstring& path)
+    std::wstring PathHelper::extractParentNameFromPath(const std::wstring& path)
     {
         std::wstring folder_name;
         size_t lastSlashPos = path.find_last_of(L"/\\");

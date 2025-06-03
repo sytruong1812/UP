@@ -9,6 +9,7 @@
 #include "user_handle.h"
 #include "zlib/zstream/izstream.h"
 #include "zlib/zstream/ozstream.h"
+#include <unordered_map>
 
 std::atomic<BOOL> exitMonitorFlag(FALSE); // Shared variable to signal exit
 
@@ -219,7 +220,7 @@ namespace UserOperations
 		return TRUE;
 	}
 
-	BOOL UserHandle::RenameFile(const std::wstring& file_path, std::wstring& new_file_name)
+	BOOL UserHandle::RenameFile(const std::wstring& file_path, const std::wstring& new_name)
 	{
 		FileInfo file;
 		HttpHeaders headers;
@@ -235,7 +236,7 @@ namespace UserOperations
 
 		DWORD file_id = cache_api->getFileID(file_path);
 		std::wstring old_file_name = Helper::PathHelper::extractFileNameFromFilePath(file_path);
-		std::string json_request = JsonUtility::CreateJsonFileRename(old_file_name, new_file_name);
+		std::string json_request = JsonUtility::CreateJsonFileRename(old_file_name, new_name);
 		response = net_api->Put(this->user_name + L"\\files\\rename\\" + std::to_wstring(file_id), headers, json_request);
 		if (response.GetStatusCode() != 200)
 		{
@@ -243,8 +244,8 @@ namespace UserOperations
 			return FALSE;
 		}
 
-		std::wstring old_folder_path = Helper::PathHelper::extractFolderFromFilePath(file_path);
-		std::wstring new_file_path = Helper::PathHelper::combinePathComponent(old_folder_path, new_file_name);
+		std::wstring old_folder_path = Helper::PathHelper::extractParentPathFromPath(file_path);
+		std::wstring new_file_path = Helper::PathHelper::combinePathComponent(old_folder_path, new_name);
 		cache_api->removeFile(file_path);
 		cache_api->insertFile(new_file_path, file_id);
 
@@ -290,7 +291,7 @@ namespace UserOperations
 		// Loop request POST file data
 		while (ReadFile(hFile, buffer, bufferSize, &bytesRead, NULL) && bytesRead > 0)
 		{
-			std::string parent_folder = Helper::StringHelper::convertWideStringToString(file.GetParentFolder()->GetPathToRoot());
+			std::string parent_folder = Helper::StringHelper::convertWideStringToString(file.GetParentFolder()->GetRelativePath());
 			std::string file_name = Helper::StringHelper::convertWideStringToString(file.GetFileName());
 			std::stringstream body;
 			/*---------[Folder]-----------------*/
@@ -376,7 +377,7 @@ namespace UserOperations
 		// Loop request POST file data
 		while (ReadFile(hFile, buffer, bufferSize, &bytesRead, NULL) && bytesRead > 0)
 		{
-			std::string parent_folder = Helper::StringHelper::convertWideStringToString(file.GetParentFolder()->GetPathToRoot());
+			std::string parent_folder = Helper::StringHelper::convertWideStringToString(file.GetParentFolder()->GetRelativePath());
 			std::string file_name = Helper::StringHelper::convertWideStringToString(file.GetFileName());
 			std::stringstream body;
 			/*---------[Folder]-----------------*/
@@ -554,7 +555,7 @@ namespace UserOperations
 		return FALSE;
 	}
 
-	BOOL UserHandle::RenameFolder(const std::wstring& folder_path, std::wstring& new_folder_name)
+	BOOL UserHandle::RenameFolder(const std::wstring& folder_path, const std::wstring& new_name)
 	{
 		return FALSE;
 	}
@@ -635,8 +636,6 @@ namespace UserOperations
 	}
 
 
-
-
 	//---- Monitor user input to allow exiting
 	DWORD WINAPI MonitorKeyboardInput(LPVOID lpParam)
 	{
@@ -676,7 +675,7 @@ namespace UserOperations
 		headers.SetHeader(L"Content-Type", L"application/json");
 
 		// Step 1: Send folder tree to server for comparison
-		LOG_INFO_W(L"[Sync] Sending folder structure to server for comparison");
+		LOG_INFO_W(L"[Prepare Watch] Sending folder structure to server for comparison");
 		std::string json_folder_tree = JsonUtility::CreateJsonFolderTree(folder);
 		response = net_api->Post(this->user_name + L"/files/compare", headers, json_folder_tree);
 
@@ -689,7 +688,7 @@ namespace UserOperations
 		}
 
 		// Step 2: Parse server response for missing files
-		LOG_INFO_W(L"[Sync] Analyzing server response for missing files");
+		LOG_INFO_W(L"[Prepare Watch] Analyzing server response for missing files");
 		std::vector<FileMissing> files_missing;
 		if (response.CheckContentIsJson())
 		{
@@ -725,35 +724,37 @@ namespace UserOperations
 			LOG_INFO_W(L"[Sync] No missing files found on server");
 		}
 
-		LOG_INFO_W(L"[Watch] Watch preparation completed successfully");
+		LOG_INFO_W(L"[Prepare Watch] Watch preparation completed successfully");
 		return TRUE;
 	}
 
-	BOOL UserHandle::WatchFolderSync(const std::wstring& folder_path, const std::wstring& filter, DWORD wait)
+	BOOL UserHandle::WatchFolderSync(const std::wstring& folder_path, const std::wstring& filter, DWORD waitMilliseconds)
 	{
-		// Get initial snapshot
-		if (!FolderHandle::GetFolderFilter(folder_path, filter, current_snapshot_)) {
+		// Step 1: Get initial snapshot
+		if (!FolderHandle::GetFolderFilter(folder_path, filter, current_snapshot)) 
+		{
 			LOG_ERROR_W(L"[Snapshot] Failed to get initial folder tree for: %s", folder_path.c_str());
 			return FALSE;
 		}
 		LOG_INFO_W(L"[Snapshot] Successfully created folder tree for: %s", folder_path.c_str());
 
-		// Prepare watch operation
-		if (!PrepareWatch(current_snapshot_)) {
-			LOG_ERROR_W(L"[Watch] Failed to prepare watch operation for folder: %s", folder_path.c_str());
-			return FALSE;
-		}
+		// Step 2: Prepare watch operation
+		//if (!PrepareWatch(current_snapshot_)) 
+		//{
+		//	LOG_ERROR_W(L"[Watch] Failed to prepare watch operation for folder: %s", folder_path.c_str());
+		//	return FALSE;
+		//}
 
-		// Create directory change notification handle
-		HANDLE hDir = CreateFileW(folder_path.c_str(), FILE_LIST_DIRECTORY,
-			FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-			NULL,
-			OPEN_EXISTING,
-			FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED,
-			NULL
-		);
-
-		if (hDir == INVALID_HANDLE_VALUE) {
+		// Step 3: Create directory change notification handle
+		HANDLE hDirectory = CreateFileW(folder_path.c_str(), 
+										FILE_LIST_DIRECTORY,
+										FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+										NULL,
+										OPEN_EXISTING,
+										FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED,
+										NULL);
+		if (hDirectory == INVALID_HANDLE_VALUE) 
+		{
 			LOG_ERROR_W(L"[System] Failed to create directory handle. Error code: %d", GetLastError());
 			return FALSE;
 		}
@@ -761,82 +762,106 @@ namespace UserOperations
 		// Set up overlapped structure
 		OVERLAPPED overlapped = { 0 };
 		overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-		if (!overlapped.hEvent) {
+		if (!overlapped.hEvent) 
+		{
 			LOG_ERROR_W(L"[System] Failed to create event handle. Error code: %d", GetLastError());
-			CloseHandle(hDir);
+			CloseHandle(hDirectory);
 			return FALSE;
 		}
 
 		// Buffer for changes
-		BYTE buffer[BUFFER_SIZE] = { 0 };
+		BYTE buffer[10000] = { 0 };
 		DWORD bytesReturned = 0;
 
 		// Create keyboard monitor thread
-		HANDLE hKeyboard = CreateThread(NULL, 0, MonitorKeyboardInput, this, 0, NULL);
-		if (!hKeyboard) {
+		HANDLE hKeyboard = CreateThread(NULL, 0, MonitorKeyboardInput, NULL, 0, NULL);
+		if (!hKeyboard) 
+		{
 			LOG_ERROR_W(L"[System] Failed to create keyboard monitor thread. Error code: %d", GetLastError());
 			CloseHandle(overlapped.hEvent);
-			CloseHandle(hDir);
+			CloseHandle(hDirectory);
 			return FALSE;
 		}
 
 		LOG_INFO_W(L"[Watch] Starting file system watch on: %s", folder_path.c_str());
 		LOG_INFO_W(L"[Watch] Press 'Q' to exit monitoring");
 
-		// Array of handles to wait on
-		HANDLE handles[2] = { overlapped.hEvent, hKeyboard };
+		ActionList actions;	// List action
+		HANDLE handles[2] = { hKeyboard, overlapped.hEvent}; // Array of handles to wait on
 
 		while (!exitMonitorFlag) 
 		{
-			// Start async watch
-			BOOL success = ReadDirectoryChangesW(hDir, 
-					buffer, BUFFER_SIZE, TRUE,  // Watch subtree
-					FILE_NOTIFY_CHANGE_FILE_NAME
-					| FILE_NOTIFY_CHANGE_DIR_NAME
-					| FILE_NOTIFY_CHANGE_LAST_WRITE,
-					&bytesReturned, &overlapped, NULL);
-
+			// Start watch
+			BOOL success = ReadDirectoryChangesW(hDirectory,
+												 buffer, sizeof(buffer), TRUE,
+												 FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_LAST_WRITE,
+												 &bytesReturned, &overlapped, NULL);
 			if (!success) {
 				LOG_ERROR_W(L"[System] ReadDirectoryChangesW failed. Error code: %d", GetLastError());
 				break;
 			}
-
 			// Wait for either directory change or keyboard input
-			DWORD waitResult = WaitForMultipleObjects(2, handles, FALSE, wait);
-			switch (waitResult)
+			DWORD dwWaitStatus = WaitForMultipleObjects(_countof(handles), handles, FALSE, waitMilliseconds);
+			switch (dwWaitStatus)
 			{
-			case WAIT_OBJECT_0:     // Directory change event
-			{
-				// Changes detected, get a new snapshot and compare
-				FolderInfo new_snapshot;
-				if (FolderHandle::GetFolderFilter(folder_path, filter, new_snapshot))
+				case WAIT_OBJECT_0: // Keyboard thread completed
 				{
-					std::lock_guard<std::mutex> lock(snapshot_mutex_);
-					DetectAndProcessChanges(current_snapshot_, new_snapshot);
-					current_snapshot_ = std::move(new_snapshot);
+					LOG_INFO_W(L"[Watch] Received exit signal from keyboard");
+					exitMonitorFlag = true;
+					break;
 				}
-				else {
-					LOG_ERROR_W(L"[Snapshot] Failed to get updated folder tree");
+				case WAIT_OBJECT_0 + 1:     // Directory change event
+				{
+					BOOL isFileChange = TRUE;
+					DWORD dwByteTransferred = 0;
+					if (GetOverlappedResult(hDirectory, &overlapped, &dwByteTransferred, FALSE) && dwByteTransferred > 0)
+					{
+						FILE_NOTIFY_INFORMATION* pNotify = (FILE_NOTIFY_INFORMATION*)buffer;
+						std::wstring subject(pNotify->FileName, pNotify->FileNameLength / sizeof(WCHAR));
+						std::wstring full_path = folder_path + L"\\" + subject;
+						isFileChange = Helper::PathHelper::isValidFilePath(full_path);
+					}
+					// Changes detected, get a new snapshot and compare
+					FolderInfo new_snapshot;
+					if (!FolderHandle::GetFolderFilter(folder_path, filter, new_snapshot))
+					{
+						LOG_ERROR_W(L"[Snapshot] Failed to get updated folder tree!");
+					}
+					else
+					{
+						std::lock_guard<std::mutex> lock(snapshot_mutex);
+						//Detected changes saving to the action list
+						if (isFileChange)
+						{
+							LOG_INFO_W(L"[Detect] Change for file... ");
+							DetectChangeForFile(current_snapshot, new_snapshot, actions);
+						}
+						else
+						{
+							LOG_INFO_W(L"[Detect] Change for folder... ");
+							DetectChangeForFolder(current_snapshot, new_snapshot, actions);
+						}
+						current_snapshot = std::move(new_snapshot);
+					}
+					break;
 				}
-				// Reset event for next notification
-				ResetEvent(overlapped.hEvent);
-			}
-			break;
-			case WAIT_OBJECT_0 + 1: // Keyboard thread completed
-			{
-				LOG_INFO_W(L"[Watch] Received exit signal from keyboard");
-				exitMonitorFlag = true;
-			}
-			break;
-			case WAIT_TIMEOUT:
-				// Timeout occurred, continue monitoring
-				break;
-			default:
-			{
-				LOG_ERROR_W(L"Wait failed with error %d", GetLastError());
-				exitMonitorFlag = true;
-			}
-			break;
+				case WAIT_TIMEOUT:	// Timeout occurred, continue monitoring
+				{
+					LOG_INFO_W(L"[Watch] Timeout - processing accumulated changes");
+
+					if (!ProcessSync(actions))
+					{
+						LOG_ERROR_W(L"[Syncing] Failed to sync folder!");
+					}
+					actions.clear();
+					break;
+				}
+				default:
+				{
+					LOG_ERROR_W(L"Wait failed with error %d", GetLastError());
+					exitMonitorFlag = true;
+					break;
+				}
 			}
 		}
 
@@ -847,146 +872,253 @@ namespace UserOperations
 		if (overlapped.hEvent) {
 			CloseHandle(overlapped.hEvent);
 		}
-		if (hDir) {
-			CloseHandle(hDir);
+		if (hDirectory) {
+			CloseHandle(hDirectory);
 		}
 		return TRUE;
 	}
 
-	void UserHandle::DetectAndProcessChanges(const FolderInfo& old_snapshot, const FolderInfo& new_snapshot)
+	void UserHandle::DetectChangeForFile(const FolderInfo& old_snapshot, const FolderInfo& new_snapshot, ActionList& actions)
 	{
-		ActionList actions;
+		// Step 1: Check for REMOVED or RENAMED files - Compare old snapshot with new snapshot
+		auto old_files = old_snapshot.GetFilesRecursive();
+		auto new_files = new_snapshot.GetFilesRecursive();
 
-		// 1. Check for deleted and renamed files - Compare old snapshot with new snapshot
-		for (const auto& old_file : old_snapshot.GetFilesRecursive())
+		for (const auto& old_file : old_files)
 		{
-			FileInfo new_file = new_snapshot.FindFileRecursive
-			(
-				old_file.GetParentFolder()->GetPathToRoot(),
-				old_file.GetFileName()
-			);
-
-			// If file not found in new snapshot, check if it was renamed
-			if (new_file == FileInfo()) {
-				bool isRenamed = false;
-				// Look for a file with same size and timestamp but different name
-				for (const auto& potential_rename : new_snapshot.GetFilesRecursive())
+			// 1.1: If file not found in new snapshot, check if it was renamed
+			if (new_snapshot.FindFileRecursive(old_file.GetFilePath()) == FileInfo())
+			{
+				BOOL isRenamed = FALSE;
+				if (old_files.size() >= new_files.size())
 				{
-					FILETIME potentialTime = potential_rename.GetLastWriteTime();
-					FILETIME oldFileTime = old_file.GetLastWriteTime();
+					// Look for a file with same timestamp and size but different path 
+					for (const auto& new_file : new_files)
+					{
+						FILETIME newFileTime = new_file.GetLastWriteTime();
+						FILETIME oldFileTime = old_file.GetLastWriteTime();
 
-					if (potential_rename.GetFileSize() == old_file.GetFileSize() &&
-						CompareFileTime(&potentialTime, &oldFileTime) == 0 &&
-						potential_rename.GetFileName() != old_file.GetFileName()) {
-						// Found renamed file
-						actions.push_back({
-							ACTION_RENAME,
-							TRUE,
-							potential_rename.GetFilePath(),  // new path
-							old_file.GetFilePath()          // old path
-							});
-						LOG_INFO_W(L"[RENAME] %s -> %s",
-							old_file.GetFilePath().c_str(),
-							potential_rename.GetFilePath().c_str());
-						isRenamed = true;
-						break;
+						if (CompareFileTime(&newFileTime, &oldFileTime) == 0 
+							&& new_file.GetFileSize() == old_file.GetFileSize() 
+							&& new_file.GetHashFile() == old_file.GetHashFile()
+							&& new_file.GetFileName() != old_file.GetFileName()
+							&& new_file.GetFilePath() != old_file.GetFilePath())
+						{
+							// Found renamed file
+							actions.push_back( { ACTION_RENAME, new FileInfo(old_file), new FileInfo(new_file) } );
+
+							LOG_INFO_W(L"[FILE][RENAME] %s -> %s", old_file.GetFilePath().c_str(), new_file.GetFilePath().c_str());
+							isRenamed = TRUE;
+							break;
+						}
 					}
-				}
+					// 1.2: If not renamed, then it was deleted
+					if (!isRenamed) 
+					{
+						actions.push_back ( { ACTION_REMOVE,  new FileInfo(old_file), NULL } );
 
-				// If not renamed, then it was deleted
-				if (!isRenamed) {
-					actions.push_back({
-						ACTION_DELETE,
-						TRUE,
-						old_file.GetFilePath(),
-						L""
-						});
-					LOG_INFO_W(L"[DELETE] %s", old_file.GetFilePath().c_str());
+						LOG_INFO_W(L"[FILE][REMOVE] %s", old_file.GetFilePath().c_str());
+					}
 				}
 			}
 		}
+		
 
-		// 2. Check for new and modified files - Compare new snapshot with old snapshot
-		for (const auto& new_file : new_snapshot.GetFilesRecursive()) {
-			// Skip if this is a renamed file (already handled)
-			bool isRenamed = false;
-			for (const auto& action : actions) {
-				if (action.type == ACTION_RENAME && action.path == new_file.GetFilePath()) {
-					isRenamed = true;
+		// Step 2: Check for ADD NEW or MODIFIED files - Compare new snapshot with old snapshot
+		for (const auto& new_file : new_files)
+		{
+			// 2.1: Skip if this is a renamed file (already handled)
+			BOOL skip = FALSE;
+			for (const auto& action : actions)
+			{
+				if (action.is_folder_ == FALSE
+					&& action.type_ == ACTION_RENAME 
+					&& action.object_new_.file_new_->GetFilePath() == new_file.GetFilePath()) 
+				{
+					skip = TRUE;
 					break;
 				}
 			}
-			if (isRenamed) continue;
-
-			FileInfo old_file = old_snapshot.FindFileRecursive
-			(
-				new_file.GetParentFolder()->GetPathToRoot(),
-				new_file.GetFileName()
-			);
-
-			if (old_file == FileInfo()) {
-				// File not found in old snapshot - it's a new file
-				actions.push_back({
-					ACTION_UPLOAD,
-					TRUE,
-					new_file.GetFilePath(),
-					L""
-					});
-				LOG_INFO_W(L"[UPLOAD] %s", new_file.GetFilePath().c_str());
+			if (skip)
+			{
+				continue;
 			}
-			else {
-				// Check for file modifications by comparing size and last write time
-				FILETIME newTime = new_file.GetLastWriteTime();
-				FILETIME oldTime = old_file.GetLastWriteTime();
-
-				if (new_file.GetFileSize() != old_file.GetFileSize() ||
-					CompareFileTime(&newTime, &oldTime) != 0) {
-					actions.push_back({
-						ACTION_UPDATE,
-						TRUE,
-						new_file.GetFilePath(),
-						L""
-						});
-					LOG_INFO_W(L"[UPDATE] %s", new_file.GetFilePath().c_str());
+			// 2.2: If file not found in old snapshot - it's a new file
+			FileInfo old_file = old_snapshot.FindFileRecursive(new_file.GetFilePath());
+			if (old_file == FileInfo())
+			{
+				actions.push_back ( { ACTION_ADD, new FileInfo(new_file),  NULL } );
+				LOG_INFO_W(L"[FILE][ADD] %s", new_file.GetFilePath().c_str());
+			}
+			else 
+			{
+				FILETIME newFileTime = new_file.GetLastWriteTime();
+				FILETIME oldFileTime = old_file.GetLastWriteTime();
+				// Check for file modifications by comparing size and hash file
+				if (CompareFileTime(&newFileTime, &oldFileTime) != 0 
+					&& new_file.GetFileSize() != old_file.GetFileSize() 
+					//&& new_file.GetHashFile() != old_file.GetHashFile() 
+					&& new_file.GetFilePath() == old_file.GetFilePath())
+				{
+					actions.push_back ( { ACTION_MODIFIED, new FileInfo(new_file), NULL } );
+					LOG_INFO_W(L"[FILE][MODIFIED] %s", new_file.GetFilePath().c_str());
 				}
 			}
 		}
+	}
 
-		// Process all detected changes using the action list
-		if (!actions.empty())
+	void UserHandle::DetectChangeForFolder(const FolderInfo& old_snapshot, const FolderInfo& new_snapshot, ActionList& actions)
+	{
+		auto old_folders = old_snapshot.GetFolderRecursive();
+		auto new_folders = new_snapshot.GetFolderRecursive();
+
+		// Step 1: Check for REMOVED or RENAMED folder - Compare old snapshot with new snapshot
+		for (const auto& old_folder : old_folders)
 		{
-			ProcessSync(actions, const_cast<FolderInfo&>(new_snapshot));
+			// 1.1: If folder not found in new snapshot, check if it was renamed
+			if (new_snapshot.FindChildrenRecursive(old_folder.GetFolderPath()) == FolderInfo())
+			{
+				BOOL skip = FALSE;
+				for (const auto& new_folder : new_folders)
+				{
+					FILETIME newFolderTime = new_folder.GetChangeTime();
+					FILETIME oldFolderTime = old_folder.GetChangeTime();
+
+					if (CompareFileTime(&newFolderTime, &oldFolderTime) == 0
+						&& old_folder.GetFolderSize() == new_folder.GetFolderSize()
+						&& old_folder.GetFolderName() != new_folder.GetFolderName()
+						&& old_folder.GetFolderPath() != new_folder.GetFolderPath())
+					{
+						// Found renamed folder
+						actions.push_back({ ACTION_RENAME, new FolderInfo(old_folder), new FolderInfo(new_folder) });
+						LOG_INFO_W(L"[FOLDER][RENAME] %s -> %s", old_folder.GetFolderPath().c_str(), new_folder.GetFolderPath().c_str());
+						skip = TRUE;
+						break;
+					}
+				}
+				
+				if (old_folders.size() > new_folders.size())
+				{
+					// 1.2: If not renamed, then it was deleted
+					if (!skip)
+					{
+						actions.push_back({ ACTION_REMOVE, new FolderInfo(old_folder), NULL });
+						LOG_INFO_W(L"[FOLDER][REMOVE] %s", old_folder.GetFolderPath().c_str());
+					}
+				}				
+			}
+		}
+
+		// Step 2: Check for ADD NEW or MODIFIED folders - Compare new snapshot with old snapshot
+		for (const auto& new_folder : new_folders)
+		{
+			// 2.1: Skip if this is a renamed folder (already handled)
+			BOOL skip = FALSE;
+			for (const auto& action : actions)
+			{
+				if (action.is_folder_
+					&& action.type_ == ACTION_RENAME
+					&& action.object_new_.folder_new_->GetFolderPath() == new_folder.GetFolderPath())
+				{
+					skip = TRUE;
+					break;
+				}
+				if (action.is_folder_ 
+					&& action.type_ == ACTION_ADD
+					&& action.object_old_.folder_old_->HasChildren(new_folder.GetFolderName()))
+				{
+					skip = TRUE;
+					break;
+				}
+			}
+			if (skip)
+			{
+				continue;
+			}
+			// 2.2: If folder not found in old snapshot - it's a new folder
+			FolderInfo old_folder = old_snapshot.FindChildrenRecursive(new_folder.GetFolderPath());
+			if (old_folder == FolderInfo())
+			{ 
+				actions.push_back({ ACTION_ADD , new FolderInfo(new_folder), NULL });
+				LOG_INFO_W(L"[FOLDER][ADD] %s", new_folder.GetFolderPath().c_str());
+			}
 		}
 	}
 
-	BOOL UserHandle::ProcessSync(ActionList actions, FolderInfo& folder)
+
+	BOOL UserHandle::ProcessSync(const ActionList& actions)
 	{
-		if (actions.empty()) {
+		if (actions.empty()) 
+		{
+			//LOG_INFO_W(L" ---> [Actions] empty!");
 			return TRUE;
 		}
 
+		//LOG_INFO_W(L" ---> [Actions] number of action: %d", actions.size());
 		for (const auto& action : actions)
 		{
-			switch (action.type)
+			switch (action.type_)
 			{
-			case SyncActionType::ACTION_UPLOAD:
-				LOG_INFO_W(L" ---> Upload File To Server: %s", action.path.c_str());
-				// TODO: Add upload logic here
+			case SyncActionType::ACTION_ADD:
+				if (action.is_folder_)
+				{
+					LOG_INFO_W(L" ---> [Upload] folder on server: %s", action.object_old_.folder_old_->GetFolderPath().c_str());
+					FolderInfo folder_add = *action.object_old_.folder_old_;
+					//ProcessFolderAdd(folder_add);
+				}
+				else
+				{
+					LOG_INFO_W(L" ---> [Upload] file to server: %s", action.object_old_.file_old_->GetFilePath().c_str());
+					FileInfo file_add = *action.object_old_.file_old_;
+					//ProcessFileAdd(file_add);
+				}
 				break;
 
-			case SyncActionType::ACTION_UPDATE:
-				LOG_INFO_W(L" ---> Update File To Server: %s", action.path.c_str());
-				// TODO: Add update logic here
+			case SyncActionType::ACTION_MODIFIED:
+				if (action.is_folder_)
+				{
+					LOG_INFO_W(L" ---> [Update] folder on server: %s", action.object_old_.folder_old_->GetFolderPath().c_str());
+					FolderInfo folder_update = *action.object_old_.folder_old_;
+					//ProcessFolderModified(folder_update);
+				}
+				else
+				{
+					LOG_INFO_W(L" ---> [Update] file to server: %s", action.object_old_.file_old_->GetFilePath().c_str());
+					FileInfo file_update = *action.object_old_.file_old_;
+					//ProcessFileModified(file_update);
+				}
 				break;
 
-			case SyncActionType::ACTION_DELETE:
-				LOG_INFO_W(L" ---> Delete File On Server: %s", action.path.c_str());
-				// TODO: Add delete logic here
+			case SyncActionType::ACTION_REMOVE:
+				if (action.is_folder_)
+				{
+					LOG_INFO_W(L" ---> [Delete] folder on server: %s", action.object_old_.folder_old_->GetFolderPath().c_str());
+					FolderInfo folder_delete = *action.object_old_.folder_old_;
+					//ProcessFolderRemove(folder_delete);
+				}
+				else
+				{
+					LOG_INFO_W(L" ---> [Delete] file on server: %s", action.object_old_.file_old_->GetFilePath().c_str());
+					FileInfo file_delete = *action.object_old_.file_old_;
+					//ProcessFileRemove(file_delete);
+				}
 				break;
 
 			case SyncActionType::ACTION_RENAME:
-				LOG_INFO_W(L" ---> Rename File On Server: %s -> %s", action.path.c_str(), action.new_path.c_str());
-				// TODO: Add rename logic here
+				if (action.is_folder_)
+				{
+					LOG_INFO_W(L" ---> [Rename] folder on server: %s -> %s", action.object_old_.folder_old_->GetFolderPath().c_str(), action.object_new_.folder_new_->GetFolderName().c_str());
+					FolderInfo old_folder = *action.object_old_.folder_old_;
+					FolderInfo new_folder = *action.object_new_.folder_new_;
+					//ProcessFolderRename(old_folder, new_folder);
+				}
+				else
+				{
+					LOG_INFO_W(L" ---> [Rename] file on server: %s -> %s", action.object_old_.file_old_->GetFilePath().c_str(), action.object_new_.file_new_->GetFilePath().c_str());
+					FileInfo old_file = *action.object_old_.file_old_;
+					FileInfo new_file = *action.object_new_.file_new_;
+					//ProcessFileRename(old_file, new_file);
+				}
 				break;
 			}
 		}
@@ -994,33 +1126,18 @@ namespace UserOperations
 	}
 
 	//---- Private method
-	BOOL UserHandle::ProcessFileAdd(FolderInfo& folder, std::wstring wSubName)
+	BOOL UserHandle::ProcessFileAdd(const FileInfo& file_add)
 	{
-		FileInfo file_add;
-		std::wstring wPath = Helper::PathHelper::combinePathComponent(folder.GetFolderPath(), wSubName);
-		std::wstring parent_folder = Helper::PathHelper::extractFolderNameFromFilePath(wPath);
-		if (!FileHandle::GetFileInfo(wPath, file_add))
-		{
-			LOG_ERROR_W(L"Error retrieving file information for: %s", wPath.c_str());
-			return FALSE;
-		}
 		if (!UploadFile(file_add))
 		{
 			LOG_ERROR_W(L"Failed to upload file: %s", file_add.GetFilePath().c_str());
 			return FALSE;
 		}
-		folder.AddFileRecursive(parent_folder, file_add);
 		return TRUE;
 	}
 
-	BOOL UserHandle::ProcessFileModified(FolderInfo& folder, std::wstring wSubName)
+	BOOL UserHandle::ProcessFileModified(const FileInfo& file)
 	{
-		if (!folder.HasFile(wSubName))
-		{
-			LOG_ERROR_W(L"Folder not contain file %s", wSubName.c_str());
-			return FALSE;
-		}
-		FileInfo file = folder.GetFile(wSubName);
 		if (!UpdateFile(file))
 		{
 			LOG_ERROR_W(L"Failed to update file: %s", file.GetFilePath().c_str());
@@ -1029,66 +1146,39 @@ namespace UserOperations
 		return TRUE;
 	}
 
-	BOOL UserHandle::ProcessFileRemove(FolderInfo& folder, std::wstring wSubName)
+	BOOL UserHandle::ProcessFileRemove(const FileInfo& file)
 	{
-		if (!folder.HasFile(wSubName))
-		{
-			LOG_ERROR_W(L"Folder not contain file %s", wSubName.c_str());
-			return FALSE;
-		}
-		FileInfo file = folder.GetFile(wSubName);
 		if (!RemoveFile(file.GetFilePath()))
 		{
+			LOG_ERROR_W(L"Failed to remove file: %s", file.GetFilePath().c_str());
 			return FALSE;
 		}
-		folder.RemoveFile(wSubName);
 		return TRUE;
 	}
 
-	BOOL UserHandle::ProcessFileRename(FolderInfo& folder, std::wstring wSubName, std::wstring& wLastSubName)
+	BOOL UserHandle::ProcessFileRename(const FileInfo& old_file, const FileInfo& new_file)
 	{
-		if (!folder.HasFile(wSubName))
+		if (!RenameFile(old_file.GetFilePath(), new_file.GetFileName()))
 		{
-			LOG_ERROR_W(L"Folder not contain file %s", wSubName.c_str());
+			LOG_ERROR_W(L"Failed to rename file %s to %s", old_file.GetFilePath().c_str(), new_file.GetFileName().c_str());
 			return FALSE;
 		}
-		FileInfo file = folder.GetFile(wLastSubName);
-		if (!RenameFile(file.GetFilePath(), wSubName))
-		{
-			return FALSE;
-		}
-		file.SetFileName(wSubName);
 		return TRUE;
 	}
 
 	//---- Private method
-	BOOL UserHandle::ProcessFolderAdd(FolderInfo& folder, std::wstring wSubName)
+	BOOL UserHandle::ProcessFolderAdd(const FolderInfo& folder)
 	{
-		FolderInfo folder_add;
-		std::wstring wPath = Helper::PathHelper::combinePathComponent(folder.GetFolderPath(), wSubName);
-		std::wstring parent_folder = Helper::PathHelper::extractFolderNameFromFilePath(wPath);
-		if (!FolderHandle::GetFolderInfo(wPath, folder_add))
-		{
-			LOG_ERROR_W(L"Error retrieving folder information for: %s", wPath.c_str());
-			return FALSE;
-		}
-		if (!UploadFolder(folder_add))
+		if (!UploadFolder(folder))
 		{
 			LOG_ERROR_W(L"Failed to upload folder: %s", folder.GetFolderPath().c_str());
 			return FALSE;
 		}
-		folder.AddChildrenRecursive(parent_folder, folder_add);
 		return TRUE;
 	}
 
-	BOOL UserHandle::ProcessFolderModified(FolderInfo& folder, std::wstring wSubName)
+	BOOL UserHandle::ProcessFolderModified(const FolderInfo& folder)
 	{
-		if (!folder.HasChildren(wSubName))
-		{
-			LOG_ERROR_W(L"Folder not contain children %s", wSubName.c_str());
-			return FALSE;
-		}
-		FolderInfo children = folder.GetChildren(wSubName);
 		if (!UpdateFolder(folder))
 		{
 			LOG_ERROR_W(L"Failed to update folder: %s", folder.GetFolderPath().c_str());
@@ -1097,35 +1187,23 @@ namespace UserOperations
 		return TRUE;
 	}
 
-	BOOL UserHandle::ProcessFolderRemove(FolderInfo& folder, std::wstring wSubName)
+	BOOL UserHandle::ProcessFolderRemove(const FolderInfo& folder)
 	{
-		if (!folder.HasChildren(wSubName))
-		{
-			LOG_ERROR_W(L"Folder not contain children %s", wSubName.c_str());
-			return FALSE;
-		}
-		FolderInfo children = folder.GetChildren(wSubName);
 		if (!RemoveFolder(folder.GetFolderPath()))
 		{
+			LOG_ERROR_W(L"Failed to remove folder: %s", folder.GetFolderPath().c_str());
 			return FALSE;
 		}
-		folder.RemoveChildren(wSubName);
 		return TRUE;
 	}
 
-	BOOL UserHandle::ProcessFolderRename(FolderInfo& folder, std::wstring wSubName, std::wstring& wLastSubName)
+	BOOL UserHandle::ProcessFolderRename(const FolderInfo& old_folder, const FolderInfo& new_folder)
 	{
-		if (!folder.HasChildren(wSubName))
+		if (!RenameFolder(old_folder.GetFolderPath(), new_folder.GetFolderName()))
 		{
-			LOG_ERROR_W(L"Folder not contain children %s", wSubName.c_str());
+			LOG_ERROR_W(L"Failed to rename folder %s to %s", old_folder.GetFolderPath().c_str(), new_folder.GetFolderName().c_str());
 			return FALSE;
 		}
-		FolderInfo children = folder.GetChildren(wLastSubName);
-		if (!RenameFolder(folder.GetFolderPath(), wSubName))
-		{
-			return FALSE;
-		}
-		children.SetFolderName(wSubName);
 		return TRUE;
 	}
 

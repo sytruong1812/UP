@@ -152,6 +152,7 @@
     <ClCompile Include="aes_gcm.cpp" />
     <ClCompile Include="base64.cpp" />
     <ClCompile Include="data_transform.cpp" />
+    <ClCompile Include="watcher.cpp" />
     <ClCompile Include="file_cache.cpp" />
     <ClCompile Include="file_handle.cpp" />
     <ClCompile Include="folder_handle.cpp" />
@@ -192,6 +193,7 @@
     <ClInclude Include="aes_gcm.h" />
     <ClInclude Include="base64.h" />
     <ClInclude Include="data_transform.h" />
+    <ClInclude Include="watcher.h" />
     <ClInclude Include="file_cache.h" />
     <ClInclude Include="file_handle.h" />
     <ClInclude Include="file_info.h" />
@@ -204,6 +206,7 @@
     <ClInclude Include="json_utility.h" />
     <ClInclude Include="logger.h" />
     <ClInclude Include="sha256.h" />
+    <ClInclude Include="thread_safe_queue.h" />
     <ClInclude Include="user_handle.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="zlib\crc32.h" />
